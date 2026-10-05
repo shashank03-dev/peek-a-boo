@@ -3,7 +3,6 @@ package dev.shashank.peekaboo.ui.screens
 import android.text.format.DateUtils
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,8 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -27,10 +24,10 @@ import coil.compose.AsyncImage
 import dev.shashank.peekaboo.data.PeekEvent
 import dev.shashank.peekaboo.data.Reports
 import dev.shashank.peekaboo.ui.components.bouncyClick
-import dev.shashank.peekaboo.ui.components.glass
+import dev.shashank.peekaboo.ui.components.panel
 import dev.shashank.peekaboo.ui.theme.Eyebrow
+import dev.shashank.peekaboo.ui.theme.Ink
 import dev.shashank.peekaboo.ui.theme.MonoValue
-import dev.shashank.peekaboo.ui.theme.Night
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -45,15 +42,14 @@ fun relative(time: Long): String =
 
 fun peekTitle(event: PeekEvent) = if (event.maxPeepers == 1) "Someone peeked" else "${event.maxPeepers} people peeked"
 
-/** Snapshot of the peeker, or a hot gradient tile with an eye when there is no photo. */
+/** Snapshot of the peeker, or a neutral tile with a red eye when there is no photo. */
 @Composable
-fun PeekThumb(event: PeekEvent, size: Dp = 52.dp, corner: Dp = 16.dp) {
+fun PeekThumb(event: PeekEvent, size: Dp = 48.dp, corner: Dp = 12.dp) {
     Box(
         Modifier
             .size(size)
             .clip(RoundedCornerShape(corner))
-            .background(Brush.linearGradient(listOf(Night.Hot.copy(alpha = 0.45f), Night.Ember.copy(alpha = 0.25f))))
-            .border(1.dp, Night.Hot.copy(alpha = 0.35f), RoundedCornerShape(corner)),
+            .background(Ink.Raised),
         contentAlignment = Alignment.Center,
     ) {
         val path = event.snapshotPath
@@ -65,7 +61,7 @@ fun PeekThumb(event: PeekEvent, size: Dp = 52.dp, corner: Dp = 16.dp) {
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
-            Icon(Icons.Rounded.RemoveRedEye, null, tint = Night.Hot, modifier = Modifier.size(size * 0.42f))
+            Icon(Icons.Rounded.RemoveRedEye, null, tint = Ink.Alert, modifier = Modifier.size(size * 0.42f))
         }
     }
 }
@@ -75,77 +71,73 @@ private fun PeoplePill(count: Int) {
     Row(
         Modifier
             .clip(CircleShape)
-            .background(Night.Hot.copy(alpha = 0.14f))
-            .border(1.dp, Night.Hot.copy(alpha = 0.25f), CircleShape)
-            .padding(horizontal = 9.dp, vertical = 4.dp),
+            .background(Ink.AlertSoft)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Rounded.Person, null, tint = Night.Hot, modifier = Modifier.size(13.dp))
-        Spacer(Modifier.width(3.dp))
-        Text("$count", style = MonoValue, color = Night.Hot)
+        Icon(Icons.Rounded.Person, null, tint = Ink.Alert, modifier = Modifier.size(12.dp))
+        Spacer(Modifier.width(4.dp))
+        Text("$count", style = MonoValue, color = Ink.Alert)
     }
 }
 
-/** Compact glass row used on the Watch tab. */
+/** Compact row used on the Watch tab. */
 @Composable
 fun PeekRow(event: PeekEvent, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
             .bouncyClick(onClick = onClick)
-            .glass(RoundedCornerShape(22.dp))
-            .padding(10.dp),
+            .panel(RoundedCornerShape(16.dp))
+            .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PeekThumb(event)
-        Spacer(Modifier.width(14.dp))
+        Spacer(Modifier.width(16.dp))
         Column(Modifier.weight(1f)) {
-            Text(peekTitle(event), style = MaterialTheme.typography.titleMedium, color = Night.Text)
-            Spacer(Modifier.height(3.dp))
+            Text(peekTitle(event), style = MaterialTheme.typography.titleMedium, color = Ink.Text)
+            Spacer(Modifier.height(4.dp))
             Text(
-                "${relative(event.startedAt).uppercase()} · ${Reports.formatDuration(event.durationMs).uppercase()}",
-                style = Eyebrow, color = Night.TextDim,
+                "${relative(event.startedAt)} · ${Reports.formatDuration(event.durationMs)}",
+                style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
             )
         }
         PeoplePill(event.maxPeepers)
-        Spacer(Modifier.width(6.dp))
     }
 }
 
-/** One stop on the Activity timeline: time on the left, a glowing node on the rail, the peek card on the right. */
+/** One stop on the Activity timeline: time on the left, a node on the rail, the peek on the right. */
 @Composable
 fun TimelineItem(event: PeekEvent, first: Boolean, last: Boolean, showDay: Boolean, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Column(Modifier.width(54.dp).padding(top = 18.dp), horizontalAlignment = Alignment.End) {
-            if (showDay) Text(dayFmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Night.Hot)
-            Text(timeFmt.format(Date(event.startedAt)), style = MonoValue, color = Night.Text)
-            Text(ampmFmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Night.TextFaint)
+        Column(Modifier.width(52.dp).padding(top = 18.dp), horizontalAlignment = Alignment.End) {
+            if (showDay) Text(dayFmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Ink.TextMuted)
+            Text(timeFmt.format(Date(event.startedAt)), style = MonoValue, color = Ink.Text)
+            Text(ampmFmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Ink.TextFaint)
         }
-        Canvas(Modifier.width(34.dp).fillMaxHeight()) {
+        Canvas(Modifier.width(32.dp).fillMaxHeight()) {
             val x = size.width / 2f
             val nodeY = 28.dp.toPx()
-            val rail = Brush.verticalGradient(listOf(Night.Hot.copy(alpha = 0.5f), Night.Violet.copy(alpha = 0.25f)))
-            if (!first) drawLine(rail, Offset(x, 0f), Offset(x, nodeY), 1.5.dp.toPx())
-            if (!last) drawLine(rail, Offset(x, nodeY), Offset(x, size.height), 1.5.dp.toPx())
-            drawCircle(Night.Hot.copy(alpha = 0.25f), 9.dp.toPx(), Offset(x, nodeY))
-            drawCircle(Night.Hot, 4.dp.toPx(), Offset(x, nodeY))
-            drawCircle(Color.White, 1.5.dp.toPx(), Offset(x, nodeY))
+            if (!first) drawLine(Ink.LineStrong, Offset(x, 0f), Offset(x, nodeY), 1.dp.toPx())
+            if (!last) drawLine(Ink.LineStrong, Offset(x, nodeY), Offset(x, size.height), 1.dp.toPx())
+            drawCircle(Ink.Bg, 6.dp.toPx(), Offset(x, nodeY))
+            drawCircle(Ink.Alert, 4.dp.toPx(), Offset(x, nodeY))
         }
         Row(
             Modifier
                 .weight(1f)
-                .padding(vertical = 6.dp)
+                .padding(vertical = 4.dp)
                 .bouncyClick(onClick = onClick)
-                .glass(RoundedCornerShape(22.dp))
-                .padding(10.dp),
+                .panel(RoundedCornerShape(16.dp))
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PeekThumb(event, size = 46.dp, corner = 14.dp)
+            PeekThumb(event, size = 44.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(peekTitle(event), style = MaterialTheme.typography.titleMedium, color = Night.Text, maxLines = 1)
-                Spacer(Modifier.height(2.dp))
-                Text("WATCHED ${Reports.formatDuration(event.durationMs).uppercase()}", style = Eyebrow, color = Night.TextDim)
+                Text(peekTitle(event), style = MaterialTheme.typography.titleMedium, color = Ink.Text, maxLines = 1)
+                Spacer(Modifier.height(4.dp))
+                Text("Watched for ${Reports.formatDuration(event.durationMs)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
             }
             PeoplePill(event.maxPeepers)
         }

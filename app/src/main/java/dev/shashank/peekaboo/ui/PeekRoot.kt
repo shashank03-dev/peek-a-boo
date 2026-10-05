@@ -51,7 +51,6 @@ import dev.chrisbanes.haze.HazeTint
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import dev.shashank.peekaboo.service.GuardState
-import dev.shashank.peekaboo.ui.components.Aurora
 import dev.shashank.peekaboo.ui.components.LocalMood
 import dev.shashank.peekaboo.ui.components.OrbMode
 import dev.shashank.peekaboo.ui.components.mood
@@ -60,8 +59,7 @@ import dev.shashank.peekaboo.ui.screens.HomeScreen
 import dev.shashank.peekaboo.ui.screens.InsightsScreen
 import dev.shashank.peekaboo.ui.screens.OnboardingScreen
 import dev.shashank.peekaboo.ui.screens.SettingsScreen
-import dev.shashank.peekaboo.ui.theme.Mood
-import dev.shashank.peekaboo.ui.theme.Night
+import dev.shashank.peekaboo.ui.theme.Ink
 
 /** Re-checks runtime permissions every time the app comes back to the foreground. */
 @Composable
@@ -99,7 +97,7 @@ fun rememberOrbMode(guardEnabled: Boolean): OrbMode {
 fun PeekRoot(vm: MainViewModel = viewModel()) {
     val settings by vm.settings.collectAsStateWithLifecycle()
     val s = settings
-    Box(Modifier.fillMaxSize().background(Night.Void)) {
+    Box(Modifier.fillMaxSize().background(Ink.Bg)) {
         if (s != null) {
             AnimatedContent(
                 targetState = s.onboardingDone,
@@ -123,9 +121,7 @@ private fun MainTabs(vm: MainViewModel, guardEnabled: Boolean) {
 
     CompositionLocalProvider(LocalMood provides mood) {
         Box(Modifier.fillMaxSize()) {
-            Box(Modifier.fillMaxSize().haze(haze)) {
-                // The guard tab gets the full aurora; other tabs keep a calmer wash of the same mood.
-                Aurora(mood, intensity = if (tab == Tab.Guard) 1f else 0.55f)
+            Box(Modifier.fillMaxSize().background(Ink.Bg).haze(haze)) {
                 AnimatedContent(
                     targetState = tab,
                     transitionSpec = {
@@ -146,7 +142,6 @@ private fun MainTabs(vm: MainViewModel, guardEnabled: Boolean) {
 
             FloatingTabBar(
                 selected = tab,
-                accent = mood,
                 haze = haze,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -157,70 +152,62 @@ private fun MainTabs(vm: MainViewModel, guardEnabled: Boolean) {
 }
 
 @Composable
-internal fun FloatingTabBar(selected: Tab, accent: Mood, haze: HazeState, modifier: Modifier, onSelect: (Tab) -> Unit) {
+internal fun FloatingTabBar(selected: Tab, haze: HazeState, modifier: Modifier, onSelect: (Tab) -> Unit) {
     Row(
         modifier
             .fillMaxWidth()
             .height(TabBarHeight)
-            .shadow(24.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(CircleShape)
             .hazeChild(
                 haze,
                 style = HazeStyle(
-                    backgroundColor = Night.Void,
-                    tint = HazeTint(Color(0xFF14141E).copy(alpha = 0.62f)),
-                    blurRadius = 30.dp,
-                    noiseFactor = 0.05f,
+                    backgroundColor = Ink.Bg,
+                    tint = HazeTint(Ink.Surface.copy(alpha = 0.88f)),
+                    blurRadius = 24.dp,
+                    noiseFactor = 0f,
                 ),
             )
-            .border(1.dp, Brush.verticalGradient(listOf(Night.StrokeBright, Night.Hairline)), CircleShape)
+            .border(1.dp, Ink.Line, CircleShape)
             .padding(6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Tab.entries.forEach { t ->
-            TabItem(t, selected = t == selected, accent = accent, modifier = Modifier.weight(if (t == selected) 1.7f else 1f)) { onSelect(t) }
+            TabItem(t, selected = t == selected, modifier = Modifier.weight(if (t == selected) 1.7f else 1f)) { onSelect(t) }
         }
     }
 }
 
 @Composable
-private fun TabItem(tab: Tab, selected: Boolean, accent: Mood, modifier: Modifier, onClick: () -> Unit) {
+private fun TabItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     val haptics = LocalHapticFeedback.current
-    val iconColor by animateColorAsState(if (selected) Night.Void else Night.TextDim, label = "tabIcon")
-    Box(
+    val bg by animateColorAsState(if (selected) Ink.Text else Ink.Text.copy(alpha = 0f), tween(200), label = "tabBg")
+    val fg by animateColorAsState(if (selected) Ink.Bg else Ink.TextMuted, tween(200), label = "tabFg")
+    Row(
         modifier
             .fillMaxHeight()
             .clip(CircleShape)
+            .background(bg)
             .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {
                 if (!selected) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },
-        contentAlignment = Alignment.Center,
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        androidx.compose.animation.AnimatedVisibility(
+        Icon(tab.icon, tab.label, tint = fg, modifier = Modifier.size(21.dp))
+        AnimatedVisibility(
             visible = selected,
-            enter = fadeIn(tween(200)) + scaleIn(spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMediumLow), initialScale = 0.6f),
-            exit = fadeOut(tween(120)),
-            modifier = Modifier.fillMaxSize(),
+            enter = expandHorizontally(spring(dampingRatio = 0.85f, stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
+            exit = shrinkHorizontally(tween(150)) + fadeOut(tween(100)),
         ) {
-            Box(Modifier.fillMaxSize().clip(CircleShape).background(Brush.linearGradient(listOf(accent.primary, accent.secondary))))
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(tab.icon, tab.label, tint = iconColor, modifier = Modifier.size(22.dp))
-            AnimatedVisibility(
-                visible = selected,
-                enter = expandHorizontally(spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow)) + fadeIn(),
-                exit = shrinkHorizontally(tween(150)) + fadeOut(tween(100)),
-            ) {
-                Text(
-                    tab.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Night.Void,
-                    maxLines = 1,
-                    modifier = Modifier.padding(start = 6.dp),
-                )
-            }
+            Text(
+                tab.label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = fg,
+                maxLines = 1,
+                modifier = Modifier.padding(start = 6.dp),
+            )
         }
     }
 }

@@ -7,18 +7,16 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.IosShare
+import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.NightsStay
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
@@ -28,29 +26,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import dev.shashank.peekaboo.data.PeekEvent
 import dev.shashank.peekaboo.data.Reports
 import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.components.BarChart
-import dev.shashank.peekaboo.ui.components.GhostButton
-import dev.shashank.peekaboo.ui.components.GlassCard
-import dev.shashank.peekaboo.ui.components.GlassIconButton
-import dev.shashank.peekaboo.ui.components.GradientText
 import dev.shashank.peekaboo.ui.components.IconBadge
+import dev.shashank.peekaboo.ui.components.Panel
+import dev.shashank.peekaboo.ui.components.RoundIconButton
 import dev.shashank.peekaboo.ui.components.ScreenHeader
+import dev.shashank.peekaboo.ui.components.SecondaryButton
+import dev.shashank.peekaboo.ui.components.SectionLabel
 import dev.shashank.peekaboo.ui.components.SegmentedControl
-import dev.shashank.peekaboo.ui.components.glass
-import dev.shashank.peekaboo.ui.theme.Eyebrow
-import dev.shashank.peekaboo.ui.theme.Mood
-import dev.shashank.peekaboo.ui.theme.Night
+import dev.shashank.peekaboo.ui.components.Tag
+import dev.shashank.peekaboo.ui.components.panel
+import dev.shashank.peekaboo.ui.theme.Ink
+import dev.shashank.peekaboo.ui.theme.InterDisplay
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -80,65 +79,64 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     ) {
         item {
             ScreenHeader("Activity", "Who's been looking") {
-                GlassIconButton(Icons.Rounded.IosShare, "Share report") { ctx.startActivity(vm.shareReport()) }
+                RoundIconButton(Icons.Rounded.IosShare, "Share report") { ctx.startActivity(vm.shareReport()) }
             }
         }
         item { SegmentedControl(listOf("Today", "This week"), range, { range = it }) }
 
         item {
-            AnimatedContent(range, transitionSpec = { fadeIn(tween(300)) togetherWith fadeOut(tween(150)) }, label = "hero") { r ->
+            AnimatedContent(range, transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(120)) }, label = "hero") { r ->
                 val big = if (r == 0) report.peeks else weekTotal
-                val animated by animateIntAsState(big, tween(900), label = "big")
-                GlassCard(Modifier.fillMaxWidth(), glow = Night.Hot, padding = PaddingValues(22.dp)) {
-                    Text(if (r == 0) "PEEKS TODAY" else "PEEKS · LAST 7 DAYS", style = Eyebrow, color = Night.Hot)
+                val animated by animateIntAsState(big, tween(700), label = "big")
+                Panel(Modifier.fillMaxWidth(), padding = PaddingValues(20.dp)) {
+                    Text(if (r == 0) "Peeks today" else "Peeks in the last 7 days", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
                     Row(verticalAlignment = Alignment.Bottom) {
-                        GradientText("$animated", MaterialTheme.typography.displayLarge, if (big > 0) Mood.Peek.brush else Brush.verticalGradient(listOf(Night.Text, Night.TextDim)))
-                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            "$animated",
+                            style = MaterialTheme.typography.displayLarge.copy(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 64.sp, fontFeatureSettings = "tnum"),
+                            color = if (big > 0) Ink.Alert else Ink.Text,
+                        )
+                        Spacer(Modifier.width(12.dp))
                         Text(
                             if (r == 0) "by ${report.people} ${if (report.people == 1) "person" else "people"}"
-                            else "≈ ${"%.1f".format(weekTotal / 7f)} a day",
-                            style = MaterialTheme.typography.titleMedium, color = Night.TextDim,
-                            modifier = Modifier.padding(bottom = 16.dp),
+                            else "about ${"%.1f".format(weekTotal / 7f)} a day",
+                            style = MaterialTheme.typography.titleMedium, color = Ink.TextMuted,
+                            modifier = Modifier.padding(bottom = 14.dp),
                         )
                     }
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(16.dp))
                     if (r == 0) {
-                        BarChart(report.hourly.toList(), listOf("12AM", "6AM", "12PM", "6PM"), report.peakHour, listOf(Night.Hot, Night.Ember))
+                        BarChart(report.hourly.toList(), listOf("12AM", "6AM", "12PM", "6PM"), report.peakHour, Ink.Alert)
                     } else {
                         val dayFmt = SimpleDateFormat("EEE", Locale.getDefault())
-                        BarChart(
-                            week.map { it.count },
-                            week.map { dayFmt.format(Date(it.dayStart)).take(2).uppercase() },
-                            6,
-                            listOf(Night.Violet, Night.Indigo),
-                        )
+                        BarChart(week.map { it.count }, week.map { dayFmt.format(Date(it.dayStart)).take(2).uppercase() }, 6, Ink.Alert)
                     }
                 }
             }
         }
 
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MiniStat("Watched", Reports.formatDuration(report.totalPeekMs), Night.Teal, Modifier.weight(1f))
-                MiniStat("Longest", Reports.formatDuration(report.longestPeekMs), Night.Violet, Modifier.weight(1f))
-                MiniStat("Busiest", report.peakHour?.let { Reports.formatHour(it) } ?: "—", Night.Ember, Modifier.weight(1f))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MiniStat("Watched", Reports.formatDuration(report.totalPeekMs), Modifier.weight(1f))
+                MiniStat("Longest", Reports.formatDuration(report.longestPeekMs), Modifier.weight(1f))
+                MiniStat("Busiest", report.peakHour?.let { Reports.formatHour(it) } ?: "—", Modifier.weight(1f))
             }
         }
 
         item { InsightCard(report.peeks, report.peakHour, report.people, week.maxOfOrNull { it.count } ?: 0) }
 
-        item { SectionLabel(if (range == 0) "Timeline · today" else "Timeline · this week", Modifier.padding(top = 8.dp)) }
+        item { SectionLabel(if (range == 0) "Timeline" else "Timeline · this week", Modifier.padding(top = 16.dp)) }
         if (list.isEmpty()) {
             item {
-                GlassCard(Modifier.fillMaxWidth(), padding = PaddingValues(28.dp)) {
+                Panel(Modifier.fillMaxWidth(), padding = PaddingValues(24.dp)) {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        IconBadge(Icons.Rounded.NightsStay, Night.Violet, size = 56.dp)
-                        Spacer(Modifier.height(14.dp))
-                        Text("Nothing to report", style = MaterialTheme.typography.titleLarge, color = Night.Text)
+                        IconBadge(Icons.Rounded.NightsStay, Ink.TextMuted, size = 48.dp)
+                        Spacer(Modifier.height(16.dp))
+                        Text("Nothing to report", style = MaterialTheme.typography.titleLarge, color = Ink.Text)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Each peek lands here with the time, how long they looked and a snapshot.",
-                            style = MaterialTheme.typography.bodyMedium, color = Night.TextDim, textAlign = TextAlign.Center,
+                            "Each peek shows up here with the time, how long they looked and a snapshot.",
+                            style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -155,10 +153,10 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         ModalBottomSheet(
             onDismissRequest = { selected = null },
             sheetState = sheet,
-            containerColor = Color(0xFF101018),
+            containerColor = Ink.Surface,
             scrimColor = Color.Black.copy(alpha = 0.6f),
             dragHandle = {
-                Box(Modifier.padding(top = 12.dp, bottom = 8.dp).size(width = 40.dp, height = 4.dp).clip(RoundedCornerShape(50)).background(Night.StrokeBright))
+                Box(Modifier.padding(top = 12.dp, bottom = 8.dp).size(width = 36.dp, height = 4.dp).clip(RoundedCornerShape(50)).background(Ink.LineStrong))
             },
         ) {
             PeekDetail(event) {
@@ -170,11 +168,11 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
 }
 
 @Composable
-internal fun MiniStat(label: String, value: String, color: Color, modifier: Modifier) {
-    Column(modifier.glass(RoundedCornerShape(22.dp)).padding(14.dp)) {
-        Text(label.uppercase(), style = Eyebrow, color = color, maxLines = 1)
+internal fun MiniStat(label: String, value: String, modifier: Modifier) {
+    Column(modifier.panel(RoundedCornerShape(16.dp)).padding(16.dp)) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, maxLines = 1)
         Spacer(Modifier.height(8.dp))
-        Text(value, style = MaterialTheme.typography.titleLarge, color = Night.Text, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = Ink.Text, maxLines = 1)
     }
 }
 
@@ -186,23 +184,16 @@ internal fun InsightCard(peeks: Int, peakHour: Int?, people: Int, bestDay: Int) 
         people > 1 -> "$people different people looked at your screen today. Repeat peekers are grouped by face, so each person counts once."
         else -> "One curious onlooker today. A quick tilt of the screen is usually enough."
     }
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(Brush.linearGradient(listOf(Night.Violet.copy(alpha = 0.18f), Night.Mint.copy(alpha = 0.06f))))
-            .border(1.dp, Brush.linearGradient(listOf(Night.Violet.copy(alpha = 0.6f), Night.Mint.copy(alpha = 0.2f))), RoundedCornerShape(24.dp))
-            .padding(18.dp),
-    ) {
-        Icon(Icons.Rounded.AutoAwesome, null, tint = Night.Violet, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.width(12.dp))
-        Column {
-            Text("INSIGHT", style = Eyebrow, color = Night.Violet)
-            Spacer(Modifier.height(4.dp))
-            Text(text, style = MaterialTheme.typography.bodyMedium, color = Night.Text)
-            if (bestDay > 0) {
-                Spacer(Modifier.height(6.dp))
-                Text("BUSIEST DAY THIS WEEK · $bestDay PEEKS", style = Eyebrow, color = Night.TextDim)
+    Panel(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
+        Row {
+            IconBadge(Icons.Rounded.Lightbulb, Ink.Text, size = 32.dp)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(text, style = MaterialTheme.typography.bodyMedium, color = Ink.Text)
+                if (bestDay > 0) {
+                    Spacer(Modifier.height(8.dp))
+                    Text("Busiest day this week: $bestDay peeks", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+                }
             }
         }
     }
@@ -210,7 +201,7 @@ internal fun InsightCard(peeks: Int, peakHour: Int?, people: Int, bestDay: Int) 
 
 @Composable
 internal fun PeekDetail(event: PeekEvent, onDelete: () -> Unit) {
-    val fmt = SimpleDateFormat("EEEE · h:mm:ss a", Locale.getDefault())
+    val fmt = SimpleDateFormat("EEEE, h:mm:ss a", Locale.getDefault())
     Column(
         Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(bottom = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -222,37 +213,23 @@ internal fun PeekDetail(event: PeekEvent, onDelete: () -> Unit) {
                     model = File(path),
                     contentDescription = "Peeker",
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(28.dp))
-                        .border(1.dp, Night.Hot.copy(alpha = 0.5f), RoundedCornerShape(28.dp)),
+                    modifier = Modifier.fillMaxWidth().aspectRatio(1f).clip(RoundedCornerShape(20.dp)),
                 )
-                Text(
-                    "CAUGHT",
-                    style = Eyebrow,
-                    color = Color.White,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(14.dp)
-                        .clip(RoundedCornerShape(50))
-                        .background(Night.Hot)
-                        .padding(horizontal = 10.dp, vertical = 5.dp),
-                )
+                Tag("Caught", Ink.Alert, Ink.OnAlert, Modifier.align(Alignment.TopStart).padding(12.dp))
             }
         } else {
-            PeekThumb(event, size = 120.dp, corner = 32.dp)
+            PeekThumb(event, size = 112.dp, corner = 28.dp)
         }
-        Spacer(Modifier.height(18.dp))
-        Text(peekTitle(event), style = MaterialTheme.typography.headlineMedium, color = Night.Text)
+        Spacer(Modifier.height(16.dp))
+        Text(peekTitle(event), style = MaterialTheme.typography.headlineMedium, color = Ink.Text)
         Spacer(Modifier.height(4.dp))
-        Text(fmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Night.TextDim)
-        Spacer(Modifier.height(18.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MiniStat("Duration", Reports.formatDuration(event.durationMs), Night.Teal, Modifier.weight(1f))
-            MiniStat("People", "${event.maxPeepers}", Night.Hot, Modifier.weight(1f))
+        Text(fmt.format(Date(event.startedAt)), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
+        Spacer(Modifier.height(16.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            MiniStat("Duration", Reports.formatDuration(event.durationMs), Modifier.weight(1f))
+            MiniStat("People", "${event.maxPeepers}", Modifier.weight(1f))
         }
-        Spacer(Modifier.height(20.dp))
-        GhostButton("Delete this peek", color = Night.Hot, icon = Icons.Rounded.DeleteOutline, onClick = onDelete)
+        Spacer(Modifier.height(24.dp))
+        SecondaryButton("Delete this peek", color = Ink.Alert, icon = Icons.Rounded.DeleteOutline, onClick = onDelete)
     }
 }

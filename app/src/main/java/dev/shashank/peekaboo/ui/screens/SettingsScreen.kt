@@ -36,7 +36,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -52,16 +51,16 @@ import dev.shashank.peekaboo.overlay.NotchPill
 import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.Permissions
 import dev.shashank.peekaboo.ui.components.ListRow
-import dev.shashank.peekaboo.ui.components.NightSwitch
+import dev.shashank.peekaboo.ui.components.PeekSwitch
 import dev.shashank.peekaboo.ui.components.ScreenHeader
 import dev.shashank.peekaboo.ui.components.Section
 import dev.shashank.peekaboo.ui.components.bouncyClick
-import dev.shashank.peekaboo.ui.components.glass
+import dev.shashank.peekaboo.ui.components.panel
 import dev.shashank.peekaboo.ui.rememberPermissions
 import dev.shashank.peekaboo.ui.theme.Eyebrow
 import dev.shashank.peekaboo.ui.theme.Inter
 import dev.shashank.peekaboo.ui.theme.MonoValue
-import dev.shashank.peekaboo.ui.theme.Night
+import dev.shashank.peekaboo.ui.theme.Ink
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -109,8 +108,8 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     ) {
         ScreenHeader("Tune", "Make it yours")
 
-        Text("SENSITIVITY", style = Eyebrow, color = Night.TextDim, modifier = Modifier.padding(start = 6.dp, top = 10.dp, bottom = 10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text("SENSITIVITY", style = Eyebrow, color = Ink.TextFaint, modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Sensitivity.entries.forEach { level ->
                 SensitivityCard(
                     level = level,
@@ -118,11 +117,6 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                         Sensitivity.Low -> Icons.Rounded.Spa
                         Sensitivity.Balanced -> Icons.Rounded.Balance
                         Sensitivity.High -> Icons.Rounded.RemoveRedEye
-                    },
-                    color = when (level) {
-                        Sensitivity.Low -> Night.Teal
-                        Sensitivity.Balanced -> Night.Violet
-                        Sensitivity.High -> Night.Hot
                     },
                     selected = s.sensitivity == level,
                     modifier = Modifier.weight(1f),
@@ -132,30 +126,30 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         Text(
             "Counts a peek after ${s.sensitivity.dwellMs / 1000f}s of looking." +
                 if (s.sensitivity == Sensitivity.High) " Also catches people further away." else "",
-            style = MaterialTheme.typography.bodySmall, color = Night.TextFaint,
-            modifier = Modifier.padding(start = 6.dp, top = 10.dp, bottom = 6.dp),
+            style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint,
+            modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 6.dp),
         )
 
         Section(footer = "Strict mode counts anyone who isn't your enrolled face, even if they're the one holding the phone.") {
-            ListRow("Strict mode", icon = Icons.Rounded.Shield, iconColor = Night.Violet, showDivider = false, trailing = {
-                NightSwitch(s.strictMode, vm::setStrict)
+            ListRow("Strict mode", icon = Icons.Rounded.Shield, showDivider = false, trailing = {
+                PeekSwitch(s.strictMode, vm::setStrict)
             })
         }
 
         Section(header = "Alerts") {
-            ListRow("Peek notch", subtitle = "Pops up under the camera", icon = Icons.Rounded.SmartButton, iconColor = Night.Hot, trailing = {
-                NightSwitch(s.showNotch, vm::setShowNotch)
+            ListRow("Peek notch", subtitle = "Pops up under the camera", icon = Icons.Rounded.SmartButton, trailing = {
+                PeekSwitch(s.showNotch, vm::setShowNotch)
             })
-            ListRow("Haptic tap", subtitle = "A soft buzz when a peek starts", icon = Icons.Rounded.Vibration, iconColor = Night.Ember, trailing = {
-                NightSwitch(s.haptics, vm::setHaptics)
+            ListRow("Haptic tap", subtitle = "A soft buzz when a peek starts", icon = Icons.Rounded.Vibration, trailing = {
+                PeekSwitch(s.haptics, vm::setHaptics)
             })
-            ListRow("Peeker snapshot", subtitle = "Kept privately on this phone", icon = Icons.Rounded.PhotoCamera, iconColor = Night.Teal, showDivider = false, trailing = {
-                NightSwitch(s.snapshots, vm::setSnapshots)
+            ListRow("Peeker snapshot", subtitle = "Kept privately on this phone", icon = Icons.Rounded.PhotoCamera, showDivider = false, trailing = {
+                PeekSwitch(s.snapshots, vm::setSnapshots)
             })
         }
 
-        Text("NOTCH POSITION", style = Eyebrow, color = Night.TextDim, modifier = Modifier.padding(start = 6.dp, top = 20.dp, bottom = 10.dp))
-        Column(Modifier.fillMaxWidth().glass(RoundedCornerShape(24.dp)).padding(16.dp)) {
+        Text("NOTCH POSITION", style = Eyebrow, color = Ink.TextFaint, modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 10.dp))
+        Column(Modifier.fillMaxWidth().panel().padding(16.dp)) {
             NotchMockup(offset)
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -166,15 +160,15 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                     valueRange = -20f..80f,
                     modifier = Modifier.weight(1f),
                     colors = SliderDefaults.colors(
-                        thumbColor = Color.White,
-                        activeTrackColor = Night.Hot,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.1f),
+                        thumbColor = Ink.Text,
+                        activeTrackColor = Ink.Text,
+                        inactiveTrackColor = Ink.Sunken,
                         activeTickColor = Color.Transparent,
                         inactiveTickColor = Color.Transparent,
                     ),
                 )
                 Spacer(Modifier.width(12.dp))
-                Text("${offset.toInt()}dp", style = MonoValue, color = Night.TextDim, modifier = Modifier.width(44.dp))
+                Text("${offset.toInt()}dp", style = MonoValue, color = Ink.TextMuted, modifier = Modifier.width(44.dp))
             }
             Row(
                 Modifier
@@ -182,21 +176,21 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                     .padding(top = 4.dp)
                     .clip(CircleShape)
                     .bouncyClick(onClick = ::previewNotch)
-                    .background(Night.Hot.copy(alpha = 0.12f))
-                    .border(1.dp, Night.Hot.copy(alpha = 0.3f), CircleShape)
+                    .background(Ink.Raised)
+                    .border(1.dp, Ink.LineStrong, CircleShape)
                     .padding(vertical = 12.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Rounded.PlayCircle, null, tint = Night.Hot, modifier = Modifier.size(18.dp))
+                Icon(Icons.Rounded.PlayCircle, null, tint = Ink.Text, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text("Preview on screen", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = Night.Hot)
+                Text("Preview on screen", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = Ink.Text)
             }
         }
 
         Section(header = "Stay alive", footer = "The camera is only used while your phone is unlocked. Unrestricted battery stops Android from putting the guard to sleep.") {
-            ListRow("Start after reboot", icon = Icons.Rounded.PowerSettingsNew, iconColor = Night.Mint, trailing = {
-                NightSwitch(s.startOnBoot, vm::setStartOnBoot)
+            ListRow("Start after reboot", icon = Icons.Rounded.PowerSettingsNew, trailing = {
+                PeekSwitch(s.startOnBoot, vm::setStartOnBoot)
             })
             PermissionRow("Battery", if (perms.battery) "Unrestricted" else "Restricted", perms.battery, Icons.Rounded.BatteryChargingFull) { open(Permissions.batteryIntent(ctx)) }
             PermissionRow("Display over apps", if (perms.overlay) "Allowed" else "Needed for the notch", perms.overlay, Icons.Rounded.Layers) { open(Permissions.overlayIntent(ctx)) }
@@ -206,35 +200,31 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
 
         Section(header = "Data") {
             ListRow(
-                "Clear peek history", subtitle = "Every peek and snapshot", icon = Icons.Rounded.DeleteForever, iconColor = Night.Hot,
-                titleColor = Night.Hot, chevron = false, showDivider = false,
+                "Clear peek history", subtitle = "Every peek and snapshot", icon = Icons.Rounded.DeleteForever, iconTint = Ink.Alert,
+                titleColor = Ink.Alert, chevron = false, showDivider = false,
                 onClick = { confirmClear = true },
             )
         }
 
         Spacer(Modifier.height(16.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("peek", style = MaterialTheme.typography.titleLarge, color = Night.TextDim)
-                Text("·a·", style = MaterialTheme.typography.titleLarge, color = Night.Mint)
-                Text("boo", style = MaterialTheme.typography.titleLarge, color = Night.TextDim)
-            }
+            Text("Peek-a-Boo ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
             Spacer(Modifier.height(4.dp))
-            Text("V${BuildConfig.VERSION_NAME} · 100% ON-DEVICE", style = Eyebrow, color = Night.TextFaint)
+            Text("Everything stays on this phone.", style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint)
         }
     }
 
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            containerColor = Color(0xFF14141E),
-            title = { Text("Clear all peeks?", color = Night.Text) },
-            text = { Text("This deletes every recorded peek and snapshot. It can't be undone.", color = Night.TextDim) },
+            containerColor = Ink.Raised,
+            title = { Text("Clear all peeks?", color = Ink.Text) },
+            text = { Text("This deletes every recorded peek and snapshot. It can't be undone.", color = Ink.TextMuted) },
             confirmButton = {
-                TextButton(onClick = { vm.clearHistory(); confirmClear = false }) { Text("Clear", color = Night.Hot) }
+                TextButton(onClick = { vm.clearHistory(); confirmClear = false }) { Text("Clear", color = Ink.Alert) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = Night.Text) }
+                TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = Ink.Text) }
             },
         )
     }
@@ -245,39 +235,36 @@ internal fun PermissionRow(title: String, status: String, ok: Boolean, icon: Ima
     ListRow(
         title,
         icon = icon,
-        iconColor = if (ok) Night.Mint else Night.Amber,
         showDivider = !last,
         onClick = onClick,
         trailing = {
-            Text(
-                status.uppercase(),
-                style = Eyebrow,
-                color = if (ok) Night.Mint else Night.Amber,
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .background((if (ok) Night.Mint else Night.Amber).copy(alpha = 0.1f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(6.dp).clip(CircleShape).background(if (ok) Ink.Accent else Ink.Alert))
+                Spacer(Modifier.width(8.dp))
+                Text(status, style = MaterialTheme.typography.bodySmall, color = if (ok) Ink.TextMuted else Ink.Text)
+            }
         },
     )
 }
 
 @Composable
-internal fun SensitivityCard(level: Sensitivity, icon: ImageVector, color: Color, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
-    val border by animateColorAsState(if (selected) color else Color.Transparent, label = "sensBorder")
+internal fun SensitivityCard(level: Sensitivity, icon: ImageVector, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Column(
         modifier
             .bouncyClick(onClick = onClick)
-            .glass(RoundedCornerShape(22.dp), fill = if (selected) color.copy(alpha = 0.14f) else Night.Glass)
-            .border(1.5.dp, border, RoundedCornerShape(22.dp))
+            .panel(
+                RoundedCornerShape(16.dp),
+                color = if (selected) Ink.Raised else Ink.Surface,
+                border = if (selected) Ink.Accent else Ink.Line,
+            )
             .padding(vertical = 16.dp, horizontal = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(icon, null, tint = if (selected) color else Night.TextDim, modifier = Modifier.size(26.dp))
-        Spacer(Modifier.height(10.dp))
-        Text(level.label, style = MaterialTheme.typography.titleMedium, color = if (selected) Night.Text else Night.TextDim)
-        Spacer(Modifier.height(2.dp))
-        Text("${level.dwellMs / 1000f}S", style = Eyebrow, color = if (selected) color else Night.TextFaint)
+        Icon(icon, null, tint = if (selected) Ink.Accent else Ink.TextMuted, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.height(8.dp))
+        Text(level.label, style = MaterialTheme.typography.titleMedium, color = if (selected) Ink.Text else Ink.TextMuted)
+        Spacer(Modifier.height(4.dp))
+        Text("${level.dwellMs / 1000f}s", style = MonoValue.copy(fontSize = 11.sp), color = Ink.TextFaint)
     }
 }
 
@@ -289,13 +276,13 @@ internal fun NotchMockup(offsetDp: Float) {
             .fillMaxWidth()
             .height(120.dp)
             .clip(RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 14.dp, bottomEnd = 14.dp))
-            .background(Brush.verticalGradient(listOf(Color(0xFF1A1A28), Color(0xFF0C0C14))))
-            .border(1.dp, Night.Stroke, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 14.dp, bottomEnd = 14.dp)),
+            .background(Ink.Bg)
+            .border(1.dp, Ink.LineStrong, RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp, bottomStart = 14.dp, bottomEnd = 14.dp)),
     ) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 22.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("9:41", style = MonoValue.copy(fontSize = 11.sp), color = Night.TextDim)
+            Text("9:41", style = MonoValue.copy(fontSize = 11.sp), color = Ink.TextMuted)
             Spacer(Modifier.weight(1f))
-            Box(Modifier.size(width = 16.dp, height = 8.dp).clip(RoundedCornerShape(2.dp)).background(Night.TextDim))
+            Box(Modifier.size(width = 16.dp, height = 8.dp).clip(RoundedCornerShape(2.dp)).background(Ink.TextMuted))
         }
         // Camera punch-hole.
         Box(
@@ -314,11 +301,11 @@ internal fun NotchMockup(offsetDp: Float) {
                 .padding(top = (26f + (offsetDp * 0.5f).coerceAtLeast(-10f)).dp)
                 .clip(CircleShape)
                 .background(Color.Black)
-                .border(1.dp, Night.Hot.copy(alpha = 0.5f), CircleShape)
+                .border(1.dp, Color.White.copy(alpha = 0.08f), CircleShape)
                 .padding(horizontal = 10.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Rounded.Visibility, null, tint = Night.Hot, modifier = Modifier.size(12.dp))
+            Icon(Icons.Rounded.Visibility, null, tint = Ink.Alert, modifier = Modifier.size(12.dp))
             Spacer(Modifier.width(6.dp))
             Text("Peeping", style = androidx.compose.ui.text.TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 10.sp), color = Color.White)
             Spacer(Modifier.width(6.dp))
@@ -326,7 +313,7 @@ internal fun NotchMockup(offsetDp: Float) {
                 "2",
                 style = androidx.compose.ui.text.TextStyle(fontFamily = Inter, fontWeight = FontWeight.Bold, fontSize = 9.sp),
                 color = Color.White,
-                modifier = Modifier.clip(CircleShape).background(Night.Hot).padding(horizontal = 5.dp),
+                modifier = Modifier.clip(CircleShape).background(Ink.Alert).padding(horizontal = 5.dp),
             )
         }
     }

@@ -52,7 +52,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -73,17 +72,15 @@ import dev.shashank.peekaboo.detect.toUprightBitmap
 import dev.shashank.peekaboo.service.GuardState
 import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.Permissions
-import dev.shashank.peekaboo.ui.components.GhostButton
-import dev.shashank.peekaboo.ui.components.GlassCard
-import dev.shashank.peekaboo.ui.components.GlowButton
+import dev.shashank.peekaboo.ui.components.Panel
+import dev.shashank.peekaboo.ui.components.PrimaryButton
+import dev.shashank.peekaboo.ui.components.SecondaryButton
 import dev.shashank.peekaboo.ui.components.ListRow
 import dev.shashank.peekaboo.ui.components.ScreenHeader
 import dev.shashank.peekaboo.ui.components.Section
 import dev.shashank.peekaboo.ui.components.TickRing
-import dev.shashank.peekaboo.ui.theme.Eyebrow
-import dev.shashank.peekaboo.ui.theme.Mono
-import dev.shashank.peekaboo.ui.theme.Mood
-import dev.shashank.peekaboo.ui.theme.Night
+import dev.shashank.peekaboo.ui.theme.Ink
+import dev.shashank.peekaboo.ui.theme.InterDisplay
 import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -133,34 +130,26 @@ fun FaceScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     }
 }
 
-/** A face glyph inside a slowly scanning ring: mint and settled once enrolled, violet and searching before. */
+/** Face glyph on a disc inside a tick ring: lime ticks and a check once enrolled, a scan line before. */
 @Composable
 internal fun FaceBadge(enrolled: Boolean, size: Dp) {
-    val mood = if (enrolled) Mood.Safe else Mood.Idle
     val t = rememberInfiniteTransition(label = "scan")
-    val scan by t.animateFloat(0f, 1f, infiniteRepeatable(tween(2600, easing = LinearEasing)), label = "line")
+    val scan by t.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "line")
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            val r = this.size.minDimension / 2f
-            drawCircle(Brush.radialGradient(listOf(mood.primary.copy(alpha = 0.35f), Color.Transparent), center, r), r)
-        }
-        TickRing(if (enrolled) 1f else 0.0f, Modifier.size(size * 0.86f), colors = listOf(mood.primary, mood.secondary))
+        TickRing(if (enrolled) 1f else 0f, Modifier.size(size))
         Box(
             Modifier
-                .size(size * 0.6f)
+                .size(size * 0.66f)
                 .clip(CircleShape)
-                .background(Brush.linearGradient(listOf(mood.primary.copy(alpha = 0.25f), mood.secondary.copy(alpha = 0.1f))))
-                .border(1.dp, mood.primary.copy(alpha = 0.5f), CircleShape),
+                .background(Ink.Raised)
+                .border(1.dp, Ink.LineStrong, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Rounded.Face, null, tint = mood.primary, modifier = Modifier.size(size * 0.3f))
+            Icon(Icons.Rounded.Face, null, tint = if (enrolled) Ink.Text else Ink.TextMuted, modifier = Modifier.size(size * 0.32f))
             if (!enrolled) {
                 Canvas(Modifier.fillMaxSize()) {
                     val y = this.size.height * scan
-                    drawLine(
-                        Brush.horizontalGradient(listOf(Color.Transparent, mood.primary, Color.Transparent)),
-                        Offset(0f, y), Offset(this.size.width, y), 2.dp.toPx(),
-                    )
+                    drawLine(Ink.Accent.copy(alpha = 0.8f), Offset(this.size.width * 0.18f, y), Offset(this.size.width * 0.82f, y), 1.5.dp.toPx())
                 }
             }
         }
@@ -168,14 +157,14 @@ internal fun FaceBadge(enrolled: Boolean, size: Dp) {
             Box(
                 Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = size * 0.14f, bottom = size * 0.14f)
+                    .padding(end = size * 0.12f, bottom = size * 0.12f)
                     .size(size * 0.2f)
                     .clip(CircleShape)
-                    .background(Mood.Safe.brush)
-                    .border(3.dp, Night.Void, CircleShape),
+                    .background(Ink.Accent)
+                    .border(4.dp, Ink.Bg, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Check, null, tint = Night.Void, modifier = Modifier.size(size * 0.12f))
+                Icon(Icons.Rounded.Check, null, tint = Ink.OnAccent, modifier = Modifier.size(size * 0.1f))
             }
         }
     }
@@ -198,63 +187,63 @@ internal fun FaceOverview(
             .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
             .padding(bottom = contentPadding.calculateBottomPadding()),
     ) {
-        ScreenHeader("You", if (owner != null) "Face recognised" else "Face not set up")
+        ScreenHeader("You", if (owner != null) "Face ID on" else "Face ID off")
         Spacer(Modifier.height(8.dp))
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { FaceBadge(owner != null, 220.dp) }
-        Spacer(Modifier.height(12.dp))
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { FaceBadge(owner != null, 200.dp) }
+        Spacer(Modifier.height(24.dp))
         Text(
-            if (owner != null) "You're on the guest list." else "Teach it your face.",
-            style = MaterialTheme.typography.headlineLarge, color = Night.Text,
+            if (owner != null) "You're recognised" else "Teach it your face",
+            style = MaterialTheme.typography.headlineLarge, color = Ink.Text,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(8.dp))
         Text(
             if (owner != null) "You're never counted as a peeker, even when a friend is holding your phone and you lean in."
             else "Look at the camera and slowly circle your head. About ten seconds, and you'll never be flagged as a peeker.",
-            style = MaterialTheme.typography.bodyMedium, color = Night.TextDim,
+            style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
         )
         Spacer(Modifier.height(24.dp))
         if (owner == null) {
-            GlowButton("Scan my face", Mood.Safe.brush, glow = Night.Mint, icon = Icons.Rounded.Fingerprint, onClick = onEnroll)
+            PrimaryButton("Scan my face", icon = Icons.Rounded.Fingerprint, onClick = onEnroll)
         } else {
             val fmt = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FactTile("Samples", "${owner.samples.size}", Modifier.weight(1f))
                 FactTile("Enrolled", fmt.format(Date(owner.enrolledAt)), Modifier.weight(1f))
             }
             Section {
-                ListRow("Test recognition", subtitle = "Check it knows you from a friend", icon = Icons.Rounded.Science, iconColor = Night.Violet, onClick = onTest)
-                ListRow("Scan again", subtitle = "New glasses, haircut or lighting", icon = Icons.Rounded.Refresh, iconColor = Night.Teal, onClick = onEnroll)
-                ListRow("Remove my face", icon = Icons.Rounded.DeleteOutline, iconColor = Night.Hot, titleColor = Night.Hot, showDivider = false, chevron = false, onClick = { confirmRemove = true })
+                ListRow("Test recognition", subtitle = "Check it knows you from a friend", icon = Icons.Rounded.Science, onClick = onTest)
+                ListRow("Scan again", subtitle = "New glasses, haircut or lighting", icon = Icons.Rounded.Refresh, onClick = onEnroll)
+                ListRow("Remove my face", icon = Icons.Rounded.DeleteOutline, iconTint = Ink.Alert, titleColor = Ink.Alert, showDivider = false, chevron = false, onClick = { confirmRemove = true })
             }
         }
         Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Lock, null, tint = Night.TextFaint, modifier = Modifier.size(13.dp))
+            Icon(Icons.Rounded.Lock, null, tint = Ink.TextFaint, modifier = Modifier.size(13.dp))
             Spacer(Modifier.width(6.dp))
-            Text("ON-DEVICE · A PATTERN, NOT A PHOTO", style = Eyebrow, color = Night.TextFaint, maxLines = 1)
+            Text("Stored on this phone as a pattern, not a photo.", style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint, maxLines = 1)
         }
     }
 
     if (confirmRemove) {
         AlertDialog(
             onDismissRequest = { confirmRemove = false },
-            containerColor = Color(0xFF14141E),
-            title = { Text("Remove your face?", color = Night.Text) },
-            text = { Text("You'll be counted as a peeker whenever someone else is looking too, until you scan again.", color = Night.TextDim) },
-            confirmButton = { TextButton(onClick = { onRemove(); confirmRemove = false }) { Text("Remove", color = Night.Hot) } },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Keep", color = Night.Text) } },
+            containerColor = Ink.Raised,
+            title = { Text("Remove your face?", color = Ink.Text) },
+            text = { Text("You'll be counted as a peeker whenever someone else is looking too, until you scan again.", color = Ink.TextMuted) },
+            confirmButton = { TextButton(onClick = { onRemove(); confirmRemove = false }) { Text("Remove", color = Ink.Alert) } },
+            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Keep", color = Ink.Text) } },
         )
     }
 }
 
 @Composable
 internal fun FactTile(label: String, value: String, modifier: Modifier) {
-    GlassCard(modifier, padding = PaddingValues(16.dp), corner = 22.dp) {
-        Text(label.uppercase(), style = Eyebrow, color = Night.Mint)
+    Panel(modifier, padding = PaddingValues(16.dp)) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         Spacer(Modifier.height(8.dp))
-        Text(value, style = MaterialTheme.typography.titleLarge, color = Night.Text, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = Ink.Text, maxLines = 1)
     }
 }
 
@@ -308,7 +297,7 @@ private fun FaceCamera(size: Dp, onFrame: (Bitmap, List<Face>) -> Unit) {
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
-            .background(Night.Deep),
+            .background(Ink.Surface),
     )
 }
 
@@ -341,12 +330,9 @@ private fun EnrollView(contentPadding: PaddingValues, onDone: (OwnerProfile) -> 
             .padding(bottom = contentPadding.calculateBottomPadding()),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        ScreenHeader("Scanning", "Face setup")
+        ScreenHeader("Scanning", "Face ID setup")
         Spacer(Modifier.height(20.dp))
         Box(Modifier.size(310.dp), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.fillMaxSize()) {
-                drawCircle(Brush.radialGradient(listOf(Night.Mint.copy(alpha = 0.25f), Color.Transparent), center, size.minDimension / 2f))
-            }
             FaceCamera(240.dp) { bmp, faces ->
                 if (samples.size >= TARGET_SAMPLES) return@FaceCamera
                 val now = System.currentTimeMillis()
@@ -375,14 +361,14 @@ private fun EnrollView(contentPadding: PaddingValues, onDone: (OwnerProfile) -> 
         Spacer(Modifier.height(20.dp))
         Text(
             "${(progress * 100).toInt()}%",
-            style = MaterialTheme.typography.displayMedium.copy(fontFamily = Mono, brush = Mood.Safe.brush),
+            style = MaterialTheme.typography.displayMedium.copy(fontFeatureSettings = "tnum"), color = Ink.Text,
         )
         Spacer(Modifier.height(4.dp))
         AnimatedContent(hint, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "hint") {
-            Text(it, style = MaterialTheme.typography.titleMedium, color = Night.Text, textAlign = TextAlign.Center)
+            Text(it, style = MaterialTheme.typography.titleMedium, color = Ink.Text, textAlign = TextAlign.Center)
         }
         Spacer(Modifier.weight(1f))
-        GhostButton("Cancel", color = Night.TextDim, onClick = onCancel)
+        SecondaryButton("Cancel", color = Ink.TextMuted, onClick = onCancel)
         Spacer(Modifier.height(16.dp))
     }
 }
@@ -394,9 +380,9 @@ private fun TestView(owner: OwnerProfile?, contentPadding: PaddingValues, onClos
     var match by remember { mutableFloatStateOf(0f) }
     val color by animateColorAsState(
         when (isYou) {
-            true -> Night.Mint
-            false -> Night.Hot
-            null -> Night.Slate
+            true -> Ink.Accent
+            false -> Ink.Alert
+            null -> Ink.LineStrong
         },
         label = "testColor",
     )
@@ -415,7 +401,6 @@ private fun TestView(owner: OwnerProfile?, contentPadding: PaddingValues, onClos
         Box(Modifier.size(290.dp), contentAlignment = Alignment.Center) {
             Canvas(Modifier.fillMaxSize()) {
                 val r = size.minDimension / 2f
-                drawCircle(Brush.radialGradient(listOf(color.copy(alpha = 0.35f), Color.Transparent), center, r), r)
                 drawCircle(color, r * 0.9f, style = Stroke(3.dp.toPx()))
             }
             FaceCamera(240.dp) { bmp, faces ->
@@ -429,27 +414,27 @@ private fun TestView(owner: OwnerProfile?, contentPadding: PaddingValues, onClos
                 val d = FaceSignature.minDistance(o.samples, FaceSignature.compute(bmp, box, f.headEulerAngleZ))
                 val you = d <= o.threshold
                 isYou = you
-                label = if (you) "That's you." else "Stranger. Would count as a peek."
+                label = if (you) "That's you" else "Stranger: would count as a peek"
                 match = (1f - (d / (o.threshold * 2f))).coerceIn(0f, 1f)
             }
         }
         Spacer(Modifier.height(20.dp))
         Text(label, style = MaterialTheme.typography.headlineMedium, color = color, textAlign = TextAlign.Center)
         Spacer(Modifier.height(16.dp))
-        GlassCard(Modifier.fillMaxWidth()) {
+        Panel(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("MATCH", style = Eyebrow, color = Night.TextDim, modifier = Modifier.weight(1f))
-                Text("${(animatedMatch * 100).toInt()}%", style = MaterialTheme.typography.titleLarge.copy(fontFamily = Mono), color = Night.Text)
+                Text("Match", style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, modifier = Modifier.weight(1f))
+                Text("${(animatedMatch * 100).toInt()}%", style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = Ink.Text)
             }
             Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = 0.08f))) {
-                Box(Modifier.fillMaxWidth(animatedMatch).fillMaxHeight().clip(RoundedCornerShape(50)).background(Brush.horizontalGradient(listOf(color.copy(alpha = 0.6f), color))))
+            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(Ink.Sunken)) {
+                Box(Modifier.fillMaxWidth(animatedMatch).fillMaxHeight().clip(RoundedCornerShape(50)).background(color))
             }
             Spacer(Modifier.height(10.dp))
-            Text("Ask a friend to look at the camera. They should show up as a stranger.", style = MaterialTheme.typography.bodySmall, color = Night.TextDim)
+            Text("Ask a friend to look at the camera. They should show up as a stranger.", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         }
         Spacer(Modifier.weight(1f))
-        GhostButton("Done", onClick = onClose)
+        SecondaryButton("Done", onClick = onClose)
         Spacer(Modifier.height(16.dp))
     }
 }

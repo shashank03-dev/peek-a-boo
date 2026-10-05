@@ -5,7 +5,6 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -16,53 +15,43 @@ import androidx.compose.ui.unit.sp
 import dev.shashank.peekaboo.R
 
 /**
- * "Night Watch" palette: a near-black void, frosted glass surfaces and a small set of luminous
- * signal colours. Each guard state owns one hue so the whole screen tells you what's happening.
+ * Palette: one warm graphite neutral ramp and exactly two signal colours.
+ *
+ *  - [Accent] (lime) means "on / you / go": the running guard, your face, primary actions, switches.
+ *  - [Alert] (red) means "someone is looking": peeks, peek counts, destructive actions.
+ *
+ * Everything else is neutral. No gradients, no glows: hierarchy comes from the surface steps
+ * (Bg → Surface → Raised) and the three text tones.
  */
-object Night {
-    val Void = Color(0xFF05050A)
-    val Deep = Color(0xFF0B0B14)
-    val Glass = Color(0x0FFFFFFF)
-    val GlassStrong = Color(0x1AFFFFFF)
-    val GlassPressed = Color(0x24FFFFFF)
-    val Stroke = Color(0x1AFFFFFF)
-    val StrokeBright = Color(0x33FFFFFF)
-    val Hairline = Color(0x12FFFFFF)
+object Ink {
+    val Bg = Color(0xFF0E0E0C)
+    val Surface = Color(0xFF171715)
+    val Raised = Color(0xFF22221F)
+    val Sunken = Color(0xFF2C2C28)
+    val Line = Color(0xFF282825)
+    val LineStrong = Color(0xFF3A3A35)
 
-    val Text = Color(0xFFF4F4F8)
-    val TextDim = Color(0x9EE9E9F2)
-    val TextFaint = Color(0x5CE9E9F2)
+    val Text = Color(0xFFF2F0EA)
+    val TextMuted = Color(0xFFA3A099)
+    val TextFaint = Color(0xFF6E6C66)
 
-    /** Guarding / safe. */
-    val Mint = Color(0xFF4DFFC3)
-    val Teal = Color(0xFF21D4FD)
-    /** Standing by. */
-    val Violet = Color(0xFF8C7BFF)
-    val Indigo = Color(0xFF5468FF)
-    /** A peek is happening. */
-    val Hot = Color(0xFFFF3B6B)
-    val Ember = Color(0xFFFF8A3D)
-    /** Neutral warnings. */
-    val Amber = Color(0xFFFFC94D)
-    val Slate = Color(0xFF7B7F95)
+    val Accent = Color(0xFFD4F25A)
+    val OnAccent = Color(0xFF151A04)
+    val AccentSoft = Color(0x1FD4F25A)
 
-    val SafeBrush = Brush.linearGradient(listOf(Mint, Teal))
-    val IdleBrush = Brush.linearGradient(listOf(Violet, Indigo))
-    val PeekBrush = Brush.linearGradient(listOf(Hot, Ember))
-    val SlateBrush = Brush.linearGradient(listOf(Color(0xFF3A3D50), Color(0xFF262838)))
-    val Iridescent = Brush.linearGradient(listOf(Mint, Teal, Violet, Hot))
+    val Alert = Color(0xFFFF5640)
+    val OnAlert = Color(0xFF1F0603)
+    val AlertSoft = Color(0x24FF5640)
 }
 
-/** The colours that follow the guard state through the aurora, eye, chips and buttons. */
+/** The single colour that represents the guard's state on the eye, status chip and live dot. */
 @Immutable
-data class Mood(val primary: Color, val secondary: Color, val tertiary: Color) {
-    val brush get() = Brush.linearGradient(listOf(primary, secondary))
-
+data class Mood(val color: Color) {
     companion object {
-        val Off = Mood(Color(0xFFA9ADC8), Color(0xFF555A73), Color(0xFF2E2A45))
-        val Idle = Mood(Night.Violet, Night.Indigo, Color(0xFF3A1F7A))
-        val Safe = Mood(Night.Mint, Night.Teal, Night.Indigo)
-        val Peek = Mood(Night.Hot, Night.Ember, Color(0xFF8A1FFF))
+        val Off = Mood(Ink.TextFaint)
+        val Idle = Mood(Ink.TextMuted)
+        val Safe = Mood(Ink.Accent)
+        val Peek = Mood(Ink.Alert)
     }
 }
 
@@ -83,44 +72,46 @@ val Mono = FontFamily(
     Font(R.font.jetbrainsmono_bold, FontWeight.Bold),
 )
 
-/** Small uppercase monospace label used for eyebrows, timestamps and units. */
-val Eyebrow = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 11.sp, letterSpacing = 0.14.em)
-val MonoValue = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 13.sp, letterSpacing = 0.02.em)
+/** Small uppercase monospace label for section names, timestamps and units. */
+val Eyebrow = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 11.sp, letterSpacing = 0.08.em)
+val MonoValue = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 13.sp)
 
 private val typography = Typography(
-    displayLarge = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Black, fontSize = 88.sp, lineHeight = 88.sp, letterSpacing = (-0.055).em),
-    displayMedium = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Black, fontSize = 52.sp, lineHeight = 54.sp, letterSpacing = (-0.045).em),
-    displaySmall = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 40.sp, lineHeight = 42.sp, letterSpacing = (-0.04).em),
-    headlineLarge = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 32.sp, lineHeight = 36.sp, letterSpacing = (-0.03).em),
-    headlineMedium = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 26.sp, lineHeight = 30.sp, letterSpacing = (-0.025).em),
-    titleLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 19.sp, letterSpacing = (-0.015).em),
-    titleMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = (-0.01).em),
+    displayLarge = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 72.sp, lineHeight = 72.sp, letterSpacing = (-0.045).em),
+    displayMedium = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 46.sp, lineHeight = 48.sp, letterSpacing = (-0.04).em),
+    displaySmall = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-0.03).em),
+    headlineLarge = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = (-0.025).em),
+    headlineMedium = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 26.sp, letterSpacing = (-0.02).em),
+    titleLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, letterSpacing = (-0.015).em),
+    titleMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Medium, fontSize = 15.sp, letterSpacing = (-0.01).em),
     bodyLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 23.sp, letterSpacing = (-0.01).em),
-    bodyMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp, letterSpacing = (-0.005).em),
+    bodyMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
     bodySmall = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 12.5.sp, lineHeight = 17.sp),
-    labelLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 16.sp, letterSpacing = (-0.01).em),
+    labelLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, letterSpacing = (-0.01).em),
     labelMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-    labelSmall = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 11.sp, letterSpacing = 0.02.em),
+    labelSmall = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
 )
 
 @Composable
 fun PeekTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = darkColorScheme(
-            primary = Night.Mint,
-            secondary = Night.Violet,
-            tertiary = Night.Hot,
-            background = Night.Void,
-            surface = Night.Deep,
-            surfaceVariant = Color(0xFF15151F),
-            surfaceContainer = Color(0xFF12121B),
-            surfaceContainerHigh = Color(0xFF181823),
-            onPrimary = Night.Void,
-            onBackground = Night.Text,
-            onSurface = Night.Text,
-            onSurfaceVariant = Night.TextDim,
-            error = Night.Hot,
-            outline = Night.Stroke,
+            primary = Ink.Accent,
+            onPrimary = Ink.OnAccent,
+            secondary = Ink.TextMuted,
+            tertiary = Ink.Alert,
+            background = Ink.Bg,
+            surface = Ink.Surface,
+            surfaceVariant = Ink.Raised,
+            surfaceContainer = Ink.Surface,
+            surfaceContainerHigh = Ink.Raised,
+            surfaceContainerLow = Ink.Surface,
+            onBackground = Ink.Text,
+            onSurface = Ink.Text,
+            onSurfaceVariant = Ink.TextMuted,
+            error = Ink.Alert,
+            outline = Ink.Line,
+            outlineVariant = Ink.Line,
         ),
         typography = typography,
         content = content,

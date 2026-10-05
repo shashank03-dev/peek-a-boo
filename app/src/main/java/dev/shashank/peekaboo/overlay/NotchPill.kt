@@ -51,8 +51,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.graphics.Brush
-import dev.shashank.peekaboo.ui.theme.Night
+import dev.shashank.peekaboo.ui.theme.Ink
 import dev.shashank.peekaboo.ui.theme.Inter
 import kotlinx.coroutines.delay
 
@@ -79,13 +78,9 @@ fun NotchPill(peepers: Int, visible: Boolean, topOffsetPx: Int) {
             )
             Row(
                 modifier = Modifier
-                    .shadow(22.dp, RoundedCornerShape(50), ambientColor = Night.Hot, spotColor = Night.Hot)
+                    .shadow(12.dp, RoundedCornerShape(50))
                     .background(Color.Black, RoundedCornerShape(50))
-                    .border(
-                        1.dp,
-                        Brush.horizontalGradient(listOf(Night.Hot.copy(alpha = 0.3f + 0.5f * glow), Night.Ember.copy(alpha = 0.25f), Color.White.copy(alpha = 0.08f))),
-                        RoundedCornerShape(50),
-                    )
+                    .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(50))
                     .animateContentSize(spring(dampingRatio = 0.7f, stiffness = Spring.StiffnessMediumLow))
                     .padding(start = 8.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -95,10 +90,10 @@ fun NotchPill(peepers: Int, visible: Boolean, topOffsetPx: Int) {
                     Modifier
                         .size(26.dp)
                         .scale(0.9f + glow * 0.1f)
-                        .background(Brush.radialGradient(listOf(Night.Hot.copy(alpha = 0.45f * glow), Night.Hot.copy(alpha = 0.08f))), CircleShape),
+                        .background(Ink.Alert.copy(alpha = 0.18f * glow), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(Icons.Rounded.Visibility, null, tint = Night.Hot, modifier = Modifier.size(16.dp))
+                    Icon(Icons.Rounded.Visibility, null, tint = Ink.Alert, modifier = Modifier.size(16.dp))
                 }
                 AnimatedVisibility(
                     visible = expanded,
@@ -114,7 +109,7 @@ fun NotchPill(peepers: Int, visible: Boolean, topOffsetPx: Int) {
                         Spacer(Modifier.width(10.dp))
                         Box(
                             Modifier
-                                .background(Brush.linearGradient(listOf(Night.Hot, Night.Ember)), RoundedCornerShape(50))
+                                .background(Ink.Alert, RoundedCornerShape(50))
                                 .padding(horizontal = 9.dp, vertical = 2.dp),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -137,7 +132,7 @@ fun NotchPill(peepers: Int, visible: Boolean, topOffsetPx: Int) {
                                 .padding(end = 4.dp)
                                 .size(7.dp)
                                 .alpha(glow)
-                                .background(Night.Hot, CircleShape)
+                                .background(Ink.Alert, CircleShape)
                         )
                     }
                 }

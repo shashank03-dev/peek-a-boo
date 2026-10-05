@@ -20,11 +20,11 @@ Open the link on your phone → install (allow "install unknown apps" for your b
 
 ## Design
 
-"Night Watch": a near-black canvas with a slow-drifting aurora that takes on the guard's mood:
-mint while watching, violet on standby, hot coral the moment someone peeks. The hero is a glass
-"eye" that glances around while guarding, dozes when idle, shuts when off and stares wide open
-during a peek. Frosted glass cards in a bento layout, a floating capsule tab bar that echoes the
-notch, and monospace labels for times and counts.
+Warm graphite neutrals and exactly two signal colours: lime means "on / you / go" (the running
+guard, your face, primary actions) and red means "someone is looking" (peeks, counts, destructive
+actions). Flat surfaces with hairline borders, no gradients or glows. The hero is a graphic eye
+that glances around while guarding, dozes on standby, sleeps when off and stares wide open during
+a peek.
 
 ## Features
 
