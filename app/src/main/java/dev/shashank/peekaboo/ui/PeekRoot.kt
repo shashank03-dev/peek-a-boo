@@ -149,6 +149,24 @@ private fun MainTabs(vm: MainViewModel, guardEnabled: Boolean) {
                 }
             }
 
+            // Scrolled content fades out under the status bar and behind the floating tab bar
+            // instead of colliding with the system icons and the bar's labels.
+            val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(statusTop + 14.dp)
+                    .background(Brush.verticalGradient(0f to Ink.Bg, 0.7f to Ink.Bg.copy(alpha = 0.85f), 1f to Color.Transparent)),
+            )
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(navBottom + TabBarHeight + 36.dp)
+                    .background(Brush.verticalGradient(0f to Color.Transparent, 0.45f to Ink.Bg.copy(alpha = 0.8f), 1f to Ink.Bg)),
+            )
+
             AnimatedVisibility(
                 visible = undo != null,
                 enter = slideInVertically(Springs.bouncy()) { it } + fadeIn(tween(150)),

@@ -45,6 +45,7 @@ import dev.shashank.peekaboo.detect.PeekSessionTracker
 import dev.shashank.peekaboo.detect.toUprightBitmap
 import dev.shashank.peekaboo.detect.cameraProvider
 import dev.shashank.peekaboo.overlay.NotchOverlay
+import dev.shashank.peekaboo.overlay.NOTCH_EXIT_MS
 import dev.shashank.peekaboo.overlay.NotchPill
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -302,31 +303,20 @@ class GuardService : LifecycleService() {
         val wanted = settings.showNotch && GuardState.peekActive.value && GuardState.peepersNow.value > 0
         if (wanted && overlay.canShow()) {
             hideJob?.cancel()
-            val attached = overlay.show {
+            val density = resources.displayMetrics.density
+            val pillTop = overlay.cameraBottomPx() + ((settings.notchOffsetDp + 6) * density).toInt()
+            overlay.show(pillTop) { spec ->
                 val peepers by GuardState.peepersNow.collectAsState()
                 val visible by pillVisible.collectAsState()
-                val density = resources.displayMetrics.density
-                NotchPill(
-                    peepers = peepers,
-                    visible = visible,
-                    topOffsetPx = overlay.cameraBottomPx() + (settings.notchOffsetDp * density).toInt(),
-                )
+                NotchPill(peepers = peepers, visible = visible, spec = spec)
             }
-            if (attached) {
-                // Start collapsed so the pill springs open once the window is on screen.
-                pillVisible.value = false
-                lifecycleScope.launch {
-                    delay(60)
-                    pillVisible.value = true
-                }
-            } else {
-                pillVisible.value = true
-            }
+            // The pill waits for the window's first frames itself before it drips out.
+            pillVisible.value = true
         } else if (pillVisible.value || hideJob == null) {
             pillVisible.value = false
             hideJob?.cancel()
             hideJob = lifecycleScope.launch {
-                delay(450) // let the exit animation play
+                delay(NOTCH_EXIT_MS) // let the exit animation play
                 overlay.hide()
             }
         }

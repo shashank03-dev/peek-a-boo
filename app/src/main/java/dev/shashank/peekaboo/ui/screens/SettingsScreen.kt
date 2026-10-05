@@ -47,6 +47,7 @@ import dev.shashank.peekaboo.BuildConfig
 import dev.shashank.peekaboo.app
 import dev.shashank.peekaboo.data.Sensitivity
 import dev.shashank.peekaboo.overlay.NotchOverlay
+import dev.shashank.peekaboo.overlay.NOTCH_EXIT_MS
 import dev.shashank.peekaboo.overlay.NotchPill
 import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.Permissions
@@ -82,20 +83,13 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             return
         }
         val overlay = NotchOverlay(ctx.applicationContext)
-        val visible = mutableStateOf(false)
-        overlay.show {
-            val settings by ctx.app.settings.settings.collectAsStateWithLifecycle(initialValue = s)
-            val density = ctx.resources.displayMetrics.density
-            NotchPill(
-                peepers = 2,
-                visible = visible.value,
-                topOffsetPx = overlay.cameraBottomPx() + (settings.notchOffsetDp * density).toInt(),
-            )
-        }
+        val visible = mutableStateOf(true)
+        val density = ctx.resources.displayMetrics.density
+        val pillTop = overlay.cameraBottomPx() + ((offset.toInt() + 6) * density).toInt()
+        if (!overlay.show(pillTop) { spec -> NotchPill(peepers = 2, visible = visible.value, spec = spec) }) return
         scope.launch {
-            delay(100); visible.value = true
             delay(3000); visible.value = false
-            delay(400); overlay.hide()
+            delay(NOTCH_EXIT_MS); overlay.hide()
         }
     }
 
