@@ -38,13 +38,18 @@ import dev.shashank.peekaboo.data.GuardSettings
 import dev.shashank.peekaboo.data.PeekEvent
 import dev.shashank.peekaboo.data.PeekFace
 import dev.shashank.peekaboo.data.Reports
+import dev.shashank.peekaboo.data.ShieldMode
 import dev.shashank.peekaboo.detect.FaceSignature
 import dev.shashank.peekaboo.detect.FrameResult
 import dev.shashank.peekaboo.detect.PeekAnalyzer
 import dev.shashank.peekaboo.detect.PeekSessionTracker
+import dev.shashank.peekaboo.detect.SeenFace
+import dev.shashank.peekaboo.detect.StrangerWatch
 import dev.shashank.peekaboo.detect.toUprightBitmap
 import dev.shashank.peekaboo.detect.cameraProvider
+import dev.shashank.peekaboo.overlay.BlackoutOverlay
 import dev.shashank.peekaboo.overlay.NotchOverlay
+import dev.shashank.peekaboo.overlay.ShieldOverlay
 import dev.shashank.peekaboo.overlay.NOTCH_EXIT_MS
 import dev.shashank.peekaboo.overlay.NotchPill
 import kotlinx.coroutines.Dispatchers
@@ -69,6 +74,10 @@ class GuardService : LifecycleService() {
     private val analyzer by lazy { PeekAnalyzer() }
     private val tracker = PeekSessionTracker(dwellMs = 800)
     private val overlay by lazy { NotchOverlay(this) }
+    private val shield by lazy { ShieldOverlay(this) }
+    private val blackout by lazy { BlackoutOverlay(this) }
+    private val foreground by lazy { ForegroundApp(this) }
+    private val stranger = StrangerWatch()
     private lateinit var executor: ExecutorService
     private var cameraProvider: ProcessCameraProvider? = null
     private var analysis: ImageAnalysis? = null
@@ -78,6 +87,12 @@ class GuardService : LifecycleService() {
     @Volatile private var lastProcessed = 0L
     @Volatile private var lastFaceAt = 0L
     @Volatile private var currentEventId: Long? = null
+    @Volatile private var isPro = false
+    @Volatile private var lastAppCheck = 0L
+    /** The app in front is one the user asked to protect (always true when that filter is off). */
+    private val inProtectedApp = MutableStateFlow(true)
+    /** The user tapped the blackout away for the current peek. */
+    private val revealed = MutableStateFlow(false)
     private var todayCount = 0
 
     private val screenReceiver = object : BroadcastReceiver() {
@@ -110,9 +125,21 @@ class GuardService : LifecycleService() {
             }
         }
         lifecycleScope.launch {
-            combine(GuardState.peekActive, GuardState.peepersNow, app.settings.settings) { a, n, _ -> a to n }
+            app.pro.isPro.collect { isPro = it }
+        }
+        lifecycleScope.launch {
+            // Shield and blackout go up before the notch so the notch always sits on top of them.
+            combine(
+                listOf(GuardState.peekActive, GuardState.peepersNow, app.settings.settings, app.pro.isPro, inProtectedApp, screenUsable, revealed)
+            ) { it.toList() }
                 .distinctUntilChanged()
-                .collect { updateOverlay() }
+                .collect { values ->
+                    // Read the fresh values here: the field collectors above may not have run yet.
+                    settings = values[2] as GuardSettings
+                    isPro = values[3] as Boolean
+                    updateShield()
+                    updateOverlay()
+                }
         }
         lifecycleScope.launch {
             combine(screenUsable, GuardState.uiCameraLeases) { usable, leases -> usable && leases == 0 }
@@ -151,6 +178,8 @@ class GuardService : LifecycleService() {
         endOpenSession()
         unbindCamera()
         overlay.hide()
+        shield.hide(animated = false)
+        blackout.hide()
         runCatching { unregisterReceiver(screenReceiver) }
         executor.shutdown()
         analyzer.close()
@@ -168,7 +197,10 @@ class GuardService : LifecycleService() {
         val km = getSystemService(KeyguardManager::class.java)
         val usable = pm.isInteractive && !km.isKeyguardLocked
         screenUsable.value = usable
-        if (!usable) endOpenSession()
+        if (!usable) {
+            endOpenSession()
+            synchronized(stranger) { stranger.reset() }
+        }
 
     }
     // endregion
@@ -213,6 +245,10 @@ class GuardService : LifecycleService() {
     private fun onFrame(image: ImageProxy) {
         image.use { proxy ->
             val now = System.currentTimeMillis()
+            if (now - lastAppCheck >= 1_000) {
+                lastAppCheck = now
+                refreshProtectedApp(now)
+            }
             // ~5 fps while faces are around, ~2 fps when the room is empty: plenty for people and easy on battery.
             val interval = if (now - lastFaceAt < 10_000) 200 else 500
             if (now - lastProcessed < interval) return
@@ -230,6 +266,30 @@ class GuardService : LifecycleService() {
             GuardState.facesInView.value = result.faces.size
             GuardState.ownerInView.value = result.ownerInView
             handle(tracker.onFrame(now, result.peepers.size), result)
+            watchForStranger(now, result)
+        }
+    }
+
+    private fun refreshProtectedApp(now: Long) {
+        val s = settings
+        inProtectedApp.value = !isPro || !s.protectedOnly || foreground.packageName(now) in s.protectedApps
+    }
+
+    /** Pro: quietly logs (with a photo) when someone other than you is the one using your phone. */
+    private fun watchForStranger(now: Long, frame: FrameResult) {
+        val s = settings
+        if (!isPro || !s.strangerAlert || app.owner.profile.value == null) return
+        val holder = frame.faces.maxByOrNull { it.box.width() * it.box.height() }
+        val strangerHolding = holder != null && !holder.isOwner && holder.isLooking
+        val fire = synchronized(stranger) { stranger.onFrame(now, frame.ownerInView, strangerHolding) }
+        if (!fire || holder == null) return
+        val snapshot = if (s.snapshots) frame.snapshotOf(listOf(holder)) else null
+        lifecycleScope.launch(Dispatchers.IO) {
+            val dao = app.db.dao()
+            val id = dao.insert(
+                PeekEvent(startedAt = now - StrangerWatch.DEFAULT_HOLD_MS, endedAt = now, maxPeepers = 1, kind = PeekEvent.KIND_STRANGER)
+            )
+            snapshot?.let { saveSnapshot(id, it) }
         }
     }
 
@@ -240,19 +300,13 @@ class GuardService : LifecycleService() {
                 GuardState.peepersNow.value = change.peepers
                 if (settings.haptics) buzz()
                 val sigs = frame.peepers.map { FaceSignature.toBytes(it.signature) }
-                val snapshot = if (settings.snapshots) frame.peeperSnapshot() else null
+                val snapshot = if (settings.snapshots) frame.snapshotOf(frame.peepers) else null
                 lifecycleScope.launch(Dispatchers.IO) {
                     val dao = app.db.dao()
                     val id = dao.insert(PeekEvent(startedAt = change.at, endedAt = change.at, maxPeepers = change.peepers))
                     currentEventId = id
                     dao.insertFaces(sigs.map { PeekFace(eventId = id, signature = it) })
-                    snapshot?.let { bmp ->
-                        val dir = File(filesDir, "snapshots").apply { mkdirs() }
-                        val f = File(dir, "peek_$id.jpg")
-                        f.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 82, it) }
-                        bmp.recycle()
-                        dao.setSnapshot(id, f.absolutePath)
-                    }
+                    snapshot?.let { saveSnapshot(id, it) }
                 }
             }
             is PeekSessionTracker.Change.Updated -> GuardState.peepersNow.value = change.peepers
@@ -265,9 +319,18 @@ class GuardService : LifecycleService() {
         tracker.flush()?.let(::finishSession)
     }
 
+    private suspend fun saveSnapshot(id: Long, bmp: Bitmap) {
+        val dir = File(filesDir, "snapshots").apply { mkdirs() }
+        val f = File(dir, "peek_$id.jpg")
+        f.outputStream().use { bmp.compress(Bitmap.CompressFormat.JPEG, 82, it) }
+        bmp.recycle()
+        app.db.dao().setSnapshot(id, f.absolutePath)
+    }
+
     private fun finishSession(ended: PeekSessionTracker.Change.Ended) {
         GuardState.peekActive.value = false
         GuardState.peepersNow.value = 0
+        revealed.value = false
         val id = currentEventId ?: return
         currentEventId = null
         lifecycleScope.launch(Dispatchers.IO) {
@@ -275,11 +338,11 @@ class GuardService : LifecycleService() {
         }
     }
 
-    private fun FrameResult.peeperSnapshot(): Bitmap? = runCatching {
-        // Union of all peeper faces, padded so the snapshot shows who it was.
-        val first = peepers.firstOrNull() ?: return null
+    private fun FrameResult.snapshotOf(who: List<SeenFace>): Bitmap? = runCatching {
+        // Union of the faces, padded so the snapshot shows who it was.
+        val first = who.firstOrNull() ?: return null
         val r = android.graphics.Rect(first.box)
-        peepers.forEach { r.union(it.box) }
+        who.forEach { r.union(it.box) }
         val pad = (maxOf(r.width(), r.height()) * 0.45f).toInt()
         r.inset(-pad, -pad)
         r.intersect(0, 0, bitmap.width, bitmap.height)
@@ -320,6 +383,22 @@ class GuardService : LifecycleService() {
                 overlay.hide()
             }
         }
+    }
+
+    /** Privacy Shield and Blackout, both Pro. */
+    private fun updateShield() {
+        val s = settings
+        val peeking = GuardState.peekActive.value && GuardState.peepersNow.value > 0
+        val active = isPro && screenUsable.value && (!s.protectedOnly || inProtectedApp.value)
+        val wantShield = active && when (s.shieldMode) {
+            ShieldMode.Off -> false
+            ShieldMode.OnPeek -> peeking
+            ShieldMode.Always -> true
+        }
+        if (wantShield && shield.canShow()) shield.show(s.shieldStyle, s.shieldStrength) else shield.hide()
+
+        val wantBlackout = active && s.blackoutOnPeek && peeking && !revealed.value
+        if (wantBlackout) blackout.show(onReveal = { revealed.value = true }) else blackout.hide()
     }
 
     private fun buzz() {

@@ -46,6 +46,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.shashank.peekaboo.BuildConfig
 import dev.shashank.peekaboo.app
 import dev.shashank.peekaboo.data.Sensitivity
+import dev.shashank.peekaboo.data.ShieldMode
+import dev.shashank.peekaboo.data.ShieldStyle
+import dev.shashank.peekaboo.overlay.ShieldOverlay
+import dev.shashank.peekaboo.ui.Route
+import dev.shashank.peekaboo.ui.components.SegmentedControl
+import dev.shashank.peekaboo.ui.components.Tag
+import androidx.compose.material.icons.rounded.AppShortcut
+import androidx.compose.material.icons.rounded.FileDownload
+import androidx.compose.material.icons.rounded.PersonSearch
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material.icons.rounded.WorkspacePremium
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import dev.shashank.peekaboo.overlay.NotchOverlay
 import dev.shashank.peekaboo.overlay.NOTCH_EXIT_MS
 import dev.shashank.peekaboo.overlay.NotchPill
@@ -72,6 +84,10 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     val ctx = LocalContext.current
     val s = vm.settings.collectAsStateWithLifecycle().value ?: return
     val perms by rememberPermissions()
+    val isPro by vm.isPro.collectAsStateWithLifecycle()
+    val owner by vm.owner.collectAsStateWithLifecycle()
+    var strength by remember(s.shieldStrength) { mutableFloatStateOf(s.shieldStrength.toFloat()) }
+    var previewingShield by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var offset by remember(s.notchOffsetDp) { mutableFloatStateOf(s.notchOffsetDp.toFloat()) }
 
@@ -93,6 +109,23 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         }
     }
 
+    /** Anyone can try the shield for a few seconds; that's the best sales pitch it has. */
+    fun previewShield() {
+        if (!Permissions.overlay(ctx)) {
+            open(Permissions.overlayIntent(ctx))
+            return
+        }
+        if (previewingShield) return
+        val shield = ShieldOverlay(ctx.applicationContext)
+        shield.show(s.shieldStyle, strength.toInt())
+        previewingShield = true
+        scope.launch {
+            delay(5000)
+            shield.hide()
+            previewingShield = false
+        }
+    }
+
     Column(
         Modifier
             .fillMaxSize()
@@ -102,6 +135,8 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             .padding(bottom = contentPadding.calculateBottomPadding()),
     ) {
         ScreenHeader("Tune", "Make it yours")
+
+        if (!isPro) ProBanner { vm.open(Route.Pro) }
 
         Text("SENSITIVITY", style = Eyebrow, color = Ink.TextFaint, modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -141,6 +176,96 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             ListRow("Peeker snapshot", subtitle = "Kept privately on this phone", icon = Icons.Rounded.PhotoCamera, showDivider = false, onClick = { vm.setSnapshots(!s.snapshots) }, chevron = false, trailing = {
                 PeekSwitch(s.snapshots, vm::setSnapshots)
             })
+        }
+
+        Row(Modifier.padding(start = 4.dp, top = 16.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text("PRIVACY SHIELD", style = Eyebrow, color = Ink.TextFaint)
+            Spacer(Modifier.width(8.dp))
+            Tag("Pro", Ink.AccentSoft, Ink.Accent)
+        }
+        Column(Modifier.fillMaxWidth().panel().padding(16.dp)) {
+            Text("Turns on", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+            SegmentedControl(
+                options = ShieldMode.entries.map { it.label },
+                selected = (if (isPro) s.shieldMode else ShieldMode.Off).ordinal,
+                onSelect = { i -> vm.withPro { vm.setShieldMode(ShieldMode.entries[i]) } },
+            )
+            Spacer(Modifier.height(16.dp))
+            Text("Look", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, modifier = Modifier.padding(start = 4.dp, bottom = 8.dp))
+            SegmentedControl(
+                options = ShieldStyle.entries.map { it.label },
+                selected = s.shieldStyle.ordinal,
+                onSelect = { i -> vm.setShieldStyle(ShieldStyle.entries[i]) },
+            )
+            Spacer(Modifier.height(16.dp))
+            Text("Strength", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted, modifier = Modifier.padding(start = 4.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                ElasticSlider(
+                    value = strength,
+                    range = ShieldOverlay.MIN_STRENGTH.toFloat()..ShieldOverlay.MAX_STRENGTH.toFloat(),
+                    onValueChange = { strength = it },
+                    onValueChangeFinished = { vm.setShieldStrength(strength.toInt()) },
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(Modifier.width(12.dp))
+                Text("${strength.toInt()}%", style = MonoValue, color = Ink.TextMuted, modifier = Modifier.width(44.dp))
+            }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp)
+                    .clip(CircleShape)
+                    .bouncyClick(onClick = ::previewShield)
+                    .background(Ink.Raised)
+                    .border(1.dp, Ink.LineStrong, CircleShape)
+                    .padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Rounded.PlayCircle, null, tint = Ink.Text, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (previewingShield) "Shield on for 5 seconds…" else "Try it for 5 seconds",
+                    style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = Ink.Text,
+                )
+            }
+        }
+        Text(
+            "Darkens the screen and lays a fine pattern over it. Right in front of the phone you can still read; " +
+                "from beside you or a step away, text washes out. Taps still go through.",
+            style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint,
+            modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
+        )
+
+        Section(footer = "Someone-else alert needs your face set up on the You tab, so it can tell you apart.") {
+            ListRow("Blackout on peek", subtitle = "Screen goes black until they look away", icon = Icons.Rounded.VisibilityOff, onClick = { vm.withPro { vm.setBlackout(!s.blackoutOnPeek) } }, chevron = false, trailing = {
+                PeekSwitch(isPro && s.blackoutOnPeek, { v -> vm.withPro { vm.setBlackout(v) } })
+            })
+            ListRow(
+                "Protected apps",
+                subtitle = when {
+                    !s.protectedOnly -> "Shield works in every app"
+                    s.protectedApps.isEmpty() -> "No apps chosen yet"
+                    else -> "Only in ${s.protectedApps.size} app${if (s.protectedApps.size == 1) "" else "s"}"
+                },
+                icon = Icons.Rounded.AppShortcut,
+                onClick = { vm.withPro { vm.open(Route.Apps) } },
+            )
+            ListRow(
+                "Someone-else alert",
+                subtitle = if (owner == null) "Set up your face first" else "Logs a photo if someone else uses your phone",
+                icon = Icons.Rounded.PersonSearch,
+                onClick = { vm.withPro { vm.setStrangerAlert(!s.strangerAlert) } },
+                chevron = false,
+                trailing = { PeekSwitch(isPro && s.strangerAlert, { v -> vm.withPro { vm.setStrangerAlert(v) } }) },
+            )
+            ListRow(
+                "Export history",
+                subtitle = "Every peek as a CSV spreadsheet",
+                icon = Icons.Rounded.FileDownload,
+                showDivider = false,
+                onClick = { vm.withPro { scope.launch { open(vm.exportCsv()) } } },
+            )
         }
 
         Text("NOTCH POSITION", style = Eyebrow, color = Ink.TextFaint, modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 10.dp))
@@ -289,5 +414,30 @@ internal fun NotchMockup(offsetDp: Float) {
                 modifier = Modifier.clip(CircleShape).background(Ink.Alert).padding(horizontal = 5.dp),
             )
         }
+    }
+}
+
+/** The upsell at the top of Tune for free users. */
+@Composable
+private fun ProBanner(onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 8.dp, bottom = 8.dp)
+            .bouncyClick(onClick = onClick)
+            .panel(RoundedCornerShape(20.dp), color = Ink.Raised, border = Ink.Accent.copy(alpha = 0.5f))
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Ink.AccentSoft), contentAlignment = Alignment.Center) {
+            Icon(Icons.Rounded.WorkspacePremium, null, tint = Ink.Accent, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(14.dp))
+        Column(Modifier.weight(1f)) {
+            Text("Get Peek-a-Boo Pro", style = MaterialTheme.typography.titleMedium, color = Ink.Text)
+            Spacer(Modifier.height(2.dp))
+            Text("Privacy Shield, Blackout, protected apps and more", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+        }
+        Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = Ink.TextFaint, modifier = Modifier.size(20.dp))
     }
 }

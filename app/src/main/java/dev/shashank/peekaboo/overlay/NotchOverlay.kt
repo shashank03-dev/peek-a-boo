@@ -8,24 +8,11 @@ import android.provider.Settings
 import android.view.Gravity
 import android.view.WindowManager
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
-import androidx.lifecycle.ViewModelStore
-import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.setViewTreeLifecycleOwner
-import androidx.lifecycle.setViewTreeViewModelStoreOwner
-import androidx.savedstate.SavedStateRegistry
-import androidx.savedstate.SavedStateRegistryController
-import androidx.savedstate.SavedStateRegistryOwner
-import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 
 /** Hosts a Compose UI in a system overlay window pinned under the front camera. */
 class NotchOverlay(private val context: Context) {
     private val wm = context.getSystemService(WindowManager::class.java)
-    private var view: ComposeView? = null
+    private var view: android.view.View? = null
     private var owner: OverlayOwner? = null
 
     fun canShow() = Settings.canDrawOverlays(context)
@@ -48,13 +35,7 @@ class NotchOverlay(private val context: Context) {
         val spec = cameraSpec(screenW, winW, pillTop, density)
 
         val o = OverlayOwner().also { it.start() }
-        val v = ComposeView(context).apply {
-            setViewTreeLifecycleOwner(o)
-            setViewTreeSavedStateRegistryOwner(o)
-            setViewTreeViewModelStoreOwner(o)
-            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindow)
-            setContent { content(spec) }
-        }
+        val v = o.composeView(context) { content(spec) }
         val lp = WindowManager.LayoutParams(
             winW,
             winH,
@@ -137,24 +118,6 @@ class NotchOverlay(private val context: Context) {
         private const val WINDOW_WIDTH_DP = 340
         /** Pill height plus room for the spring overshoot below it. */
         private const val WINDOW_EXTRA_HEIGHT_DP = 84
-    }
-
-    private class OverlayOwner : LifecycleOwner, SavedStateRegistryOwner, ViewModelStoreOwner {
-        private val registry = LifecycleRegistry(this)
-        private val savedState = SavedStateRegistryController.create(this)
-        override val lifecycle: Lifecycle get() = registry
-        override val savedStateRegistry: SavedStateRegistry get() = savedState.savedStateRegistry
-        override val viewModelStore = ViewModelStore()
-
-        fun start() {
-            savedState.performRestore(null)
-            registry.currentState = Lifecycle.State.RESUMED
-        }
-
-        fun stop() {
-            registry.currentState = Lifecycle.State.DESTROYED
-            viewModelStore.clear()
-        }
     }
 }
 

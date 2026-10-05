@@ -26,16 +26,22 @@ keeps a daily report. The owner's face is enrolled so they are never counted as 
   - `detect/` — ML Kit face detection (`PeekAnalyzer`), on-device LBPH face signatures (`FaceSignature`), peek debouncing (`PeekSessionTracker`)
   - `overlay/` — system overlay host + the notch pill composable
   - `data/` — Room (peek events + peeper signatures), DataStore settings, owner face store, report maths
+  - `billing/` — Play Billing subscription (Pro entitlement, plans)
   - `ui/` — iOS-style Compose UI: Guard, Report, Face ID, Settings tabs + onboarding
-- Min SDK 26, target/compile SDK 35, ARM ABIs only.
+- Min SDK 26, target/compile SDK 36, ARM ABIs only.
 
 ## Build
 
 ```sh
 ./gradlew :app:testReleaseUnitTest      # unit tests
-./gradlew :app:assembleRelease          # signed APK -> app/build/outputs/apk/release/app-release.apk
+./gradlew :app:assembleRelease -PunlockPro=true   # signed sideload APK (Pro unlocked) -> app/build/outputs/apk/release/app-release.apk
 cp app/build/outputs/apk/release/app-release.apk release/PeekABoo.apk
+./gradlew :app:bundleRelease            # Play Store bundle (Pro sold through Play Billing) -> app/build/outputs/bundle/release/app-release.aab
 ```
+
+Pro features are gated by `ProStore.isPro` (`billing/ProStore.kt`, subscription `peekaboo_pro`).
+`-PunlockPro=true` is only for the sideload APK. Never use it for a Play upload. Play setup lives in
+`docs/play-store/launch-kit.md`.
 
 After any app change: bump `versionCode`/`versionName` in `app/build.gradle.kts`, rebuild, copy the
 APK to `release/PeekABoo.apk` and commit it — that file is the download link the owner installs from.

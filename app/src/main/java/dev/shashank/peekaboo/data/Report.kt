@@ -28,7 +28,8 @@ object Reports {
 
     fun hourOf(time: Long): Int = Calendar.getInstance().apply { timeInMillis = time }.get(Calendar.HOUR_OF_DAY)
 
-    fun day(events: List<PeekEvent>, faces: List<PeekFace>, threshold: Float?): DayReport {
+    fun day(all: List<PeekEvent>, faces: List<PeekFace>, threshold: Float?): DayReport {
+        val events = all.filter { !it.isStranger }
         val hourly = IntArray(24)
         events.forEach { hourly[hourOf(it.startedAt)]++ }
         val peak = hourly.indices.maxByOrNull { hourly[it] }?.takeIf { hourly[it] > 0 }
@@ -60,7 +61,7 @@ object Reports {
         (6 downTo 0).map { ago ->
             val start = startOfDay(now, ago)
             val end = startOfDay(now, ago - 1)
-            DailyCount(start, events.count { it.startedAt in start until end })
+            DailyCount(start, events.count { !it.isStranger && it.startedAt in start until end })
         }
 
     fun formatDuration(ms: Long): String {

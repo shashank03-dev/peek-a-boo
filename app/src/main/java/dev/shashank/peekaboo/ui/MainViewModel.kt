@@ -12,6 +12,13 @@ import dev.shashank.peekaboo.data.OwnerProfile
 import dev.shashank.peekaboo.data.PeekEvent
 import dev.shashank.peekaboo.data.Reports
 import dev.shashank.peekaboo.data.Sensitivity
+import dev.shashank.peekaboo.data.ShieldMode
+import dev.shashank.peekaboo.data.ShieldStyle
+import dev.shashank.peekaboo.billing.ProPlan
+import dev.shashank.peekaboo.billing.ProStore
+import dev.shashank.peekaboo.billing.StoreStatus
+import android.app.Activity
+import androidx.core.content.FileProvider
 import dev.shashank.peekaboo.service.GuardService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -36,6 +43,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** Full-screen pages that slide up over the tabs. */
+enum class Route { Pro, Apps }
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val app = application.app
@@ -45,6 +55,22 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         app.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val owner: StateFlow<OwnerProfile?> = app.owner.profile
+
+    val isPro: StateFlow<Boolean> = app.pro.isPro
+    val plans: StateFlow<List<ProPlan>> = app.pro.plans
+    val storeStatus: StateFlow<StoreStatus> = app.pro.status
+    val purchasing: StateFlow<Boolean> = app.pro.busy
+
+    val route = MutableStateFlow<Route?>(null)
+    fun open(r: Route) { route.value = r }
+    fun close() { route.value = null }
+
+    /** Runs [block] when Pro is unlocked, otherwise shows the paywall. */
+    fun withPro(block: () -> Unit) = if (isPro.value) block() else open(Route.Pro)
+
+    fun buy(activity: Activity, plan: ProPlan) = app.pro.buy(activity, plan)
+    fun restorePurchases() = app.pro.refresh()
+    fun manageSubscriptionUrl(): String = ProStore.manageUrl(getApplication<Application>().packageName)
 
     /** Ticks every minute so "today" rolls over and relative times stay fresh. */
     private val clock = flow {
@@ -81,7 +107,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         .map { Reports.week(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), Reports.week(emptyList()))
 
-    val weekTotal: StateFlow<Int> = weekEvents.map { it.size }
+    val weekTotal: StateFlow<Int> = weekEvents.map { list -> list.count { !it.isStranger } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
     val previewNotch = MutableStateFlow(false)
@@ -100,6 +126,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setStartOnBoot(v: Boolean) = viewModelScope.launch { app.settings.setStartOnBoot(v) }
     fun setSensitivity(v: Sensitivity) = viewModelScope.launch { app.settings.setSensitivity(v) }
     fun setNotchOffset(v: Int) = viewModelScope.launch { app.settings.setNotchOffset(v) }
+    fun setShieldMode(v: ShieldMode) = viewModelScope.launch { app.settings.setShieldMode(v) }
+    fun setShieldStyle(v: ShieldStyle) = viewModelScope.launch { app.settings.setShieldStyle(v) }
+    fun setShieldStrength(v: Int) = viewModelScope.launch { app.settings.setShieldStrength(v) }
+    fun setBlackout(v: Boolean) = viewModelScope.launch { app.settings.setBlackoutOnPeek(v) }
+    fun setProtectedOnly(v: Boolean) = viewModelScope.launch { app.settings.setProtectedOnly(v) }
+    fun setProtectedApp(pkg: String, on: Boolean) = viewModelScope.launch { app.settings.setProtectedApp(pkg, on) }
+    fun setStrangerAlert(v: Boolean) = viewModelScope.launch { app.settings.setStrangerAlert(v) }
 
     fun saveOwner(profile: OwnerProfile) = viewModelScope.launch(Dispatchers.IO) { app.owner.save(profile) }
     fun clearOwner() = viewModelScope.launch(Dispatchers.IO) { app.owner.clear() }
@@ -151,6 +184,27 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         dao.clear()
     }
 
+    /** Pro: the whole history as a spreadsheet-friendly CSV, handed to the share sheet. */
+    suspend fun exportCsv(): Intent = withContext(Dispatchers.IO) {
+        val ctx = getApplication<Application>()
+        val iso = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
+        val csv = buildString {
+            appendLine("type,started,ended,duration_seconds,people,has_photo")
+            dao.all().forEach { e ->
+                val type = if (e.isStranger) "someone_else_used_phone" else "peek"
+                appendLine("$type,${iso.format(Date(e.startedAt))},${iso.format(Date(e.endedAt))},${e.durationMs / 1000},${e.maxPeepers},${e.snapshotPath != null}")
+            }
+        }
+        val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }
+        val file = File(dir, "peekaboo-history.csv").apply { writeText(csv) }
+        val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.files", file)
+        Intent.createChooser(
+            Intent(Intent.ACTION_SEND).setType("text/csv").putExtra(Intent.EXTRA_STREAM, uri)
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
+            "Export peek history",
+        )
+    }
+
     fun shareReport(): Intent {
         val r = today.value
         val fmt = SimpleDateFormat("EEEE, d MMM", Locale.getDefault())
@@ -168,7 +222,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 appendLine()
                 appendLine("Timeline")
                 todayEvents.value.sortedBy { it.startedAt }.forEach {
-                    appendLine("  ${time.format(Date(it.startedAt))} — ${it.maxPeepers} ${if (it.maxPeepers == 1) "person" else "people"}, ${Reports.formatDuration(it.durationMs)}")
+                    val what = if (it.isStranger) "someone else used my phone" else
+                        "${it.maxPeepers} ${if (it.maxPeepers == 1) "person" else "people"}, ${Reports.formatDuration(it.durationMs)}"
+                    appendLine("  ${time.format(Date(it.startedAt))} — $what")
                 }
             }
         }

@@ -41,7 +41,11 @@ private val dayFmt = SimpleDateFormat("EEE", Locale.getDefault())
 fun relative(time: Long): String =
     DateUtils.getRelativeTimeSpanString(time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS).toString()
 
-fun peekTitle(event: PeekEvent) = if (event.maxPeepers == 1) "Someone peeked" else "${event.maxPeepers} people peeked"
+fun peekTitle(event: PeekEvent) = when {
+    event.isStranger -> "Someone else used your phone"
+    event.maxPeepers == 1 -> "Someone peeked"
+    else -> "${event.maxPeepers} people peeked"
+}
 
 /** Snapshot of the peeker, or a neutral tile with a red eye when there is no photo. */
 @Composable
@@ -62,7 +66,7 @@ fun PeekThumb(event: PeekEvent, size: Dp = 48.dp, corner: Dp = 12.dp) {
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
-            Icon(Icons.Rounded.RemoveRedEye, null, tint = Ink.Alert, modifier = Modifier.size(size * 0.42f))
+            Icon(if (event.isStranger) Icons.Rounded.Person else Icons.Rounded.RemoveRedEye, null, tint = Ink.Alert, modifier = Modifier.size(size * 0.42f))
         }
     }
 }
@@ -146,7 +150,7 @@ fun TimelineItem(
             Column(Modifier.weight(1f)) {
                 Text(peekTitle(event), style = MaterialTheme.typography.titleMedium, color = Ink.Text, maxLines = 1)
                 Spacer(Modifier.height(4.dp))
-                Text("Watched for ${Reports.formatDuration(event.durationMs)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+                Text(if (event.isStranger) "Your face wasn't in view" else "Watched for ${Reports.formatDuration(event.durationMs)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
             }
             PeoplePill(event.maxPeepers)
         }

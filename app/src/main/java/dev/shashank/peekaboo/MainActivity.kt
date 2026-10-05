@@ -32,6 +32,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        app.pro.refresh()
         // Whenever the app is opened, make sure an enabled guard is actually running:
         // this is the moment Android allows a camera service to (re)start.
         lifecycleScope.launch {

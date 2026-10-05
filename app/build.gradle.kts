@@ -14,14 +14,18 @@ val keystoreProps = Properties().apply {
 
 android {
     namespace = "dev.shashank.peekaboo"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "dev.shashank.peekaboo"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 2
-        versionName = "1.1.0"
+        targetSdk = 36
+        versionCode = 3
+        versionName = "2.0.0"
+
+        // Sideloaded builds have no Play billing to buy Pro through, so they can ship with Pro
+        // unlocked: ./gradlew :app:assembleRelease -PunlockPro=true. Play builds leave it off.
+        buildConfigField("boolean", "PRO_UNLOCKED", (findProperty("unlockPro")?.toString() == "true").toString())
 
         ndk {
             // Phones are ARM; dropping emulator ABIs halves the APK.
@@ -90,6 +94,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.coroutines.android)
     implementation(libs.coroutines.play)
+    implementation(libs.play.billing)
 
     testImplementation("junit:junit:4.13.2")
 }

@@ -63,7 +63,10 @@ import dev.shashank.peekaboo.service.GuardState
 import dev.shashank.peekaboo.ui.components.LocalMood
 import dev.shashank.peekaboo.ui.components.OrbMode
 import dev.shashank.peekaboo.ui.components.mood
+import androidx.activity.compose.BackHandler
+import dev.shashank.peekaboo.ui.screens.AppsScreen
 import dev.shashank.peekaboo.ui.screens.FaceScreen
+import dev.shashank.peekaboo.ui.screens.ProScreen
 import dev.shashank.peekaboo.ui.screens.HomeScreen
 import dev.shashank.peekaboo.ui.screens.InsightsScreen
 import dev.shashank.peekaboo.ui.screens.OnboardingScreen
@@ -185,6 +188,34 @@ private fun MainTabs(vm: MainViewModel, guardEnabled: Boolean) {
                     .align(Alignment.BottomCenter)
                     .padding(bottom = navBottom + 16.dp, start = 20.dp, end = 20.dp),
             ) { tab = it }
+
+            // Pages that slide up over everything, like an iOS sheet.
+            val route by vm.route.collectAsStateWithLifecycle()
+            BackHandler(enabled = route != null) { vm.close() }
+            AnimatedContent(
+                targetState = route,
+                transitionSpec = {
+                    (slideInVertically(Springs.ui()) { it / 3 } + fadeIn(tween(180))) togetherWith
+                        (slideOutVertically(Springs.ui()) { it / 3 } + fadeOut(tween(150)))
+                },
+                modifier = Modifier.fillMaxSize(),
+                label = "route",
+            ) { r ->
+                if (r != null) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Ink.Bg)
+                            // Swallow taps so nothing underneath reacts.
+                            .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) {},
+                    ) {
+                        when (r) {
+                            Route.Pro -> ProScreen(vm)
+                            Route.Apps -> AppsScreen(vm)
+                        }
+                    }
+                }
+            }
         }
     }
 }
