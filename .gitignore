@@ -11,3 +11,4 @@ keystore.properties
 *.jks
 !app/peekaboo-sideload.jks
 *.keystore
+.kotlin/

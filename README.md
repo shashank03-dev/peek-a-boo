@@ -10,6 +10,22 @@ camera — **"Peeping · 2"** — and every peek lands in a beautiful daily repo
 
 Open the link on your phone → install (allow "install unknown apps" for your browser when asked).
 
+<p>
+  <img src="docs/screenshots/homeGuarding.png" width="19%" />
+  <img src="docs/screenshots/homeAlert.png" width="19%" />
+  <img src="docs/screenshots/activity.png" width="19%" />
+  <img src="docs/screenshots/faceDone.png" width="19%" />
+  <img src="docs/screenshots/settings.png" width="19%" />
+</p>
+
+## Design
+
+"Night Watch": a near-black canvas with a slow-drifting aurora that takes on the guard's mood:
+mint while watching, violet on standby, hot coral the moment someone peeks. The hero is a glass
+"eye" that glances around while guarding, dozes when idle, shuts when off and stares wide open
+during a peek. Frosted glass cards in a bento layout, a floating capsule tab bar that echoes the
+notch, and monospace labels for times and counts.
+
 ## Features
 
 - **Live peek detection** — front camera + ML Kit face detection, ~5 fps when people are around, ~2 fps when the room is empty.
@@ -22,8 +38,8 @@ Open the link on your phone → install (allow "install unknown apps" for your b
 
 ## Tech
 
-Kotlin · Jetpack Compose (Material 3, custom iOS-style components) · CameraX · Google ML Kit Face Detection ·
-Room · DataStore · Haze (frosted-glass tab bar) · Coil · Inter typeface.
+Kotlin · Jetpack Compose (Material 3, custom glass components) · CameraX · Google ML Kit Face Detection ·
+Room · DataStore · Haze (frosted-glass tab bar) · Coil · Inter + JetBrains Mono.
 
 ## Build
 
@@ -31,4 +47,4 @@ Room · DataStore · Haze (frosted-glass tab bar) · Coil · Inter typeface.
 ./gradlew :app:assembleRelease
 ```
 
-Fonts: Inter by Rasmus Andersson, SIL Open Font License (see `FONT_LICENSE.txt`).
+Fonts: Inter by Rasmus Andersson and JetBrains Mono by JetBrains, both SIL Open Font License (see `FONT_LICENSE.txt`).
