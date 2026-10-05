@@ -53,9 +53,7 @@ import dev.shashank.peekaboo.ui.Route
 import dev.shashank.peekaboo.ui.components.SegmentedControl
 import dev.shashank.peekaboo.ui.components.Tag
 import androidx.compose.material.icons.rounded.AppShortcut
-import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.PersonSearch
-import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import dev.shashank.peekaboo.overlay.NotchOverlay
@@ -238,9 +236,6 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         )
 
         Section(footer = "Someone-else alert needs your face set up on the You tab, so it can tell you apart.") {
-            ListRow("Blackout on peek", subtitle = "Screen goes black until they look away", icon = Icons.Rounded.VisibilityOff, onClick = { vm.withPro { vm.setBlackout(!s.blackoutOnPeek) } }, chevron = false, trailing = {
-                PeekSwitch(isPro && s.blackoutOnPeek, { v -> vm.withPro { vm.setBlackout(v) } })
-            })
             ListRow(
                 "Protected apps",
                 subtitle = when {
@@ -257,14 +252,8 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                 icon = Icons.Rounded.PersonSearch,
                 onClick = { vm.withPro { vm.setStrangerAlert(!s.strangerAlert) } },
                 chevron = false,
-                trailing = { PeekSwitch(isPro && s.strangerAlert, { v -> vm.withPro { vm.setStrangerAlert(v) } }) },
-            )
-            ListRow(
-                "Export history",
-                subtitle = "Every peek as a CSV spreadsheet",
-                icon = Icons.Rounded.FileDownload,
                 showDivider = false,
-                onClick = { vm.withPro { scope.launch { open(vm.exportCsv()) } } },
+                trailing = { PeekSwitch(isPro && s.strangerAlert, { v -> vm.withPro { vm.setStrangerAlert(v) } }) },
             )
         }
 
@@ -436,7 +425,7 @@ private fun ProBanner(onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text("Get Peek-a-Boo Pro", style = MaterialTheme.typography.titleMedium, color = Ink.Text)
             Spacer(Modifier.height(2.dp))
-            Text("Privacy Shield, Blackout, protected apps and more", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
+            Text("Privacy Shield, protected apps and someone-else alert", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         }
         Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, null, tint = Ink.TextFaint, modifier = Modifier.size(20.dp))
     }

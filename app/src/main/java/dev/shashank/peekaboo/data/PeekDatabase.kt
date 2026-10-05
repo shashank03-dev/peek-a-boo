@@ -77,9 +77,6 @@ interface PeekDao {
     @Query("SELECT f.* FROM peek_faces f JOIN peek_events e ON e.id = f.eventId WHERE e.startedAt >= :from")
     suspend fun facesSince(from: Long): List<PeekFace>
 
-    @Query("SELECT * FROM peek_events ORDER BY startedAt DESC")
-    suspend fun all(): List<PeekEvent>
-
     @Query("SELECT COUNT(*) FROM peek_events WHERE startedAt >= :from AND kind = 0")
     fun countSince(from: Long): Flow<Int>
 

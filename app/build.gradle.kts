@@ -20,8 +20,8 @@ android {
         applicationId = "dev.shashank.peekaboo"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "2.0.0"
+        versionCode = 4
+        versionName = "2.0.1"
 
         // Sideloaded builds have no Play billing to buy Pro through, so they can ship with Pro
         // unlocked: ./gradlew :app:assembleRelease -PunlockPro=true. Play builds leave it off.

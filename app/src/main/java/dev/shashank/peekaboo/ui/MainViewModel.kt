@@ -18,7 +18,6 @@ import dev.shashank.peekaboo.billing.ProPlan
 import dev.shashank.peekaboo.billing.ProStore
 import dev.shashank.peekaboo.billing.StoreStatus
 import android.app.Activity
-import androidx.core.content.FileProvider
 import dev.shashank.peekaboo.service.GuardService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -129,7 +128,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun setShieldMode(v: ShieldMode) = viewModelScope.launch { app.settings.setShieldMode(v) }
     fun setShieldStyle(v: ShieldStyle) = viewModelScope.launch { app.settings.setShieldStyle(v) }
     fun setShieldStrength(v: Int) = viewModelScope.launch { app.settings.setShieldStrength(v) }
-    fun setBlackout(v: Boolean) = viewModelScope.launch { app.settings.setBlackoutOnPeek(v) }
     fun setProtectedOnly(v: Boolean) = viewModelScope.launch { app.settings.setProtectedOnly(v) }
     fun setProtectedApp(pkg: String, on: Boolean) = viewModelScope.launch { app.settings.setProtectedApp(pkg, on) }
     fun setStrangerAlert(v: Boolean) = viewModelScope.launch { app.settings.setStrangerAlert(v) }
@@ -182,27 +180,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         hidden.value = emptySet()
         dao.allSnapshots().forEach { File(it).delete() }
         dao.clear()
-    }
-
-    /** Pro: the whole history as a spreadsheet-friendly CSV, handed to the share sheet. */
-    suspend fun exportCsv(): Intent = withContext(Dispatchers.IO) {
-        val ctx = getApplication<Application>()
-        val iso = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-        val csv = buildString {
-            appendLine("type,started,ended,duration_seconds,people,has_photo")
-            dao.all().forEach { e ->
-                val type = if (e.isStranger) "someone_else_used_phone" else "peek"
-                appendLine("$type,${iso.format(Date(e.startedAt))},${iso.format(Date(e.endedAt))},${e.durationMs / 1000},${e.maxPeepers},${e.snapshotPath != null}")
-            }
-        }
-        val dir = File(ctx.cacheDir, "reports").apply { mkdirs() }
-        val file = File(dir, "peekaboo-history.csv").apply { writeText(csv) }
-        val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.files", file)
-        Intent.createChooser(
-            Intent(Intent.ACTION_SEND).setType("text/csv").putExtra(Intent.EXTRA_STREAM, uri)
-                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION),
-            "Export peek history",
-        )
     }
 
     fun shareReport(): Intent {

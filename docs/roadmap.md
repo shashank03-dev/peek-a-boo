@@ -6,10 +6,8 @@ Ideas from looking at the Galaxy S26 Ultra Privacy Display, other anti-peep apps
 ## Shipped in 2.0
 
 - **Privacy Shield**: auto-on when someone peeks, or always on. Louver, Dim and Grain looks, strength slider.
-- **Blackout on peek**, tap to reveal.
 - **Protected apps**: shield only in chosen apps. This is the S26's per-app privacy display, plus it's automatic.
 - **Someone-else alert**: logs a photo when a stranger is using the unlocked phone.
-- **CSV export**.
 
 ## Next
 
@@ -32,4 +30,4 @@ Ideas from looking at the Galaxy S26 Ultra Privacy Display, other anti-peep apps
   heavily restricted on Play and the guard already covers "someone else is using my phone".
 - **Auto-lock when a stranger holds the phone**: needs device admin (`lockNow`). Same problem.
 - **Going to the home screen on a peek**: needs an accessibility service. Play's accessibility
-  policy would almost certainly reject this use. Blackout gives the same result without it.
+  policy would almost certainly reject this use. The Privacy Shield covers most of the same need.

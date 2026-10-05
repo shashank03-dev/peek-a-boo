@@ -23,10 +23,8 @@ It's private by design: everything runs on your phone and the app doesn't even h
 🛡️ PEEK-A-BOO PRO
 • Privacy Shield: the screen darkens and scrambles automatically when someone looks. It's like a
   privacy screen protector that only switches on when you need it. Pick Louver, Dim or Grain.
-• Blackout: the screen goes black the instant a peek starts. One tap brings it back.
 • Protected apps: keep the shield on just for banking, chats and photos
 • Someone-else alert: if someone else is using your unlocked phone, it's quietly logged with a photo
-• Export your whole history as a spreadsheet
 
 🔒 PRIVATE BY DESIGN
 • No internet permission. Nothing ever leaves your phone.

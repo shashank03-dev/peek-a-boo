@@ -103,7 +103,7 @@ and the Pro paywall. Feature graphic: 1024×500, eye logo plus "Catch shoulder s
 ## 6. Release
 
 1. Internal testing track › upload the `.aab` › add yourself › install from the opt-in link › buy
-   Pro with a license-tester account › check the shield, blackout and protected apps.
+   Pro with a license-tester account › check the shield, protected apps and someone-else alert.
 2. Closed testing with 12+ testers for 14 days (personal accounts).
 3. Production, with a staged rollout at 20%.
 

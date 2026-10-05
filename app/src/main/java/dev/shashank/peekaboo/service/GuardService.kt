@@ -47,7 +47,6 @@ import dev.shashank.peekaboo.detect.SeenFace
 import dev.shashank.peekaboo.detect.StrangerWatch
 import dev.shashank.peekaboo.detect.toUprightBitmap
 import dev.shashank.peekaboo.detect.cameraProvider
-import dev.shashank.peekaboo.overlay.BlackoutOverlay
 import dev.shashank.peekaboo.overlay.NotchOverlay
 import dev.shashank.peekaboo.overlay.ShieldOverlay
 import dev.shashank.peekaboo.overlay.NOTCH_EXIT_MS
@@ -75,7 +74,6 @@ class GuardService : LifecycleService() {
     private val tracker = PeekSessionTracker(dwellMs = 800)
     private val overlay by lazy { NotchOverlay(this) }
     private val shield by lazy { ShieldOverlay(this) }
-    private val blackout by lazy { BlackoutOverlay(this) }
     private val foreground by lazy { ForegroundApp(this) }
     private val stranger = StrangerWatch()
     private lateinit var executor: ExecutorService
@@ -91,8 +89,6 @@ class GuardService : LifecycleService() {
     @Volatile private var lastAppCheck = 0L
     /** The app in front is one the user asked to protect (always true when that filter is off). */
     private val inProtectedApp = MutableStateFlow(true)
-    /** The user tapped the blackout away for the current peek. */
-    private val revealed = MutableStateFlow(false)
     private var todayCount = 0
 
     private val screenReceiver = object : BroadcastReceiver() {
@@ -128,9 +124,9 @@ class GuardService : LifecycleService() {
             app.pro.isPro.collect { isPro = it }
         }
         lifecycleScope.launch {
-            // Shield and blackout go up before the notch so the notch always sits on top of them.
+            // The shield goes up before the notch so the notch always sits on top of it.
             combine(
-                listOf(GuardState.peekActive, GuardState.peepersNow, app.settings.settings, app.pro.isPro, inProtectedApp, screenUsable, revealed)
+                listOf(GuardState.peekActive, GuardState.peepersNow, app.settings.settings, app.pro.isPro, inProtectedApp, screenUsable)
             ) { it.toList() }
                 .distinctUntilChanged()
                 .collect { values ->
@@ -179,7 +175,6 @@ class GuardService : LifecycleService() {
         unbindCamera()
         overlay.hide()
         shield.hide(animated = false)
-        blackout.hide()
         runCatching { unregisterReceiver(screenReceiver) }
         executor.shutdown()
         analyzer.close()
@@ -330,7 +325,6 @@ class GuardService : LifecycleService() {
     private fun finishSession(ended: PeekSessionTracker.Change.Ended) {
         GuardState.peekActive.value = false
         GuardState.peepersNow.value = 0
-        revealed.value = false
         val id = currentEventId ?: return
         currentEventId = null
         lifecycleScope.launch(Dispatchers.IO) {
@@ -385,7 +379,7 @@ class GuardService : LifecycleService() {
         }
     }
 
-    /** Privacy Shield and Blackout, both Pro. */
+    /** Privacy Shield (Pro). */
     private fun updateShield() {
         val s = settings
         val peeking = GuardState.peekActive.value && GuardState.peepersNow.value > 0
@@ -396,9 +390,6 @@ class GuardService : LifecycleService() {
             ShieldMode.Always -> true
         }
         if (wantShield && shield.canShow()) shield.show(s.shieldStyle, s.shieldStrength) else shield.hide()
-
-        val wantBlackout = active && s.blackoutOnPeek && peeking && !revealed.value
-        if (wantBlackout) blackout.show(onReveal = { revealed.value = true }) else blackout.hide()
     }
 
     private fun buzz() {

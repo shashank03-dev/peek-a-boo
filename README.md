@@ -44,10 +44,8 @@ slider and a sliding pill tab bar.
 ### Peek-a-Boo Pro (subscription)
 
 - **Privacy Shield** — a touch-through privacy filter that switches itself on the moment someone looks (or stays on). Louver, Dim or Grain, adjustable strength. Head-on you can still read; from beside you, text washes out. A software take on the Galaxy S26 Ultra's Privacy Display that works on any phone and turns on by itself.
-- **Blackout** — the screen goes black as soon as a peek starts; one tap brings it back.
 - **Protected apps** — keep the shield to banking, chats, photos.
 - **Someone-else alert** — quietly logs a photo when someone other than you is using your unlocked phone.
-- **History export** — everything as CSV.
 
 Billing goes through Google Play Billing 8. The Play Store app does the network calls, so the app still has no internet permission.
 See [`docs/play-store/launch-kit.md`](docs/play-store/launch-kit.md) for the Play Console setup and [`docs/roadmap.md`](docs/roadmap.md) for what's next.

@@ -15,7 +15,7 @@ and nothing is collected, sent or shared.**
 | **Peeker snapshots** (on by default, can be turned off) | A small photo of whoever peeked, so you can see who it was in your report. | Stored only in the app's private storage on your phone. |
 | **Peek history** (times, durations, number of people) | To build your daily report. | Stored only in the app's private storage on your phone. |
 | **Usage access** (Pro, optional) | To know which app is open, so the Privacy Shield can protect only the apps you choose. | Read on the device and never stored or sent. |
-| **Display over other apps** | To show the peek notch, Privacy Shield and Blackout over other apps. | Not applicable. |
+| **Display over other apps** | To show the peek notch and the Privacy Shield over other apps. | Not applicable. |
 
 ## What the app does not do
 
@@ -30,9 +30,9 @@ confirmation from the Google Play app on your phone that your subscription is ac
 your payment details. Google's own privacy policy applies to the purchase:
 https://policies.google.com/privacy
 
-## Sharing and export
+## Sharing
 
-The app only shares data when you tap **Share** or **Export history** yourself, and then only to
+The app only shares data when you tap **Share** yourself, and then only to
 the app you pick in Android's share sheet.
 
 ## Deleting your data

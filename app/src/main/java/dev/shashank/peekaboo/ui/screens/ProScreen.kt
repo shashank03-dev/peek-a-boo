@@ -16,10 +16,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AppShortcut
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Gradient
 import androidx.compose.material.icons.rounded.PersonSearch
-import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material.icons.rounded.WorkspacePremium
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -59,10 +57,8 @@ private data class Perk(val icon: ImageVector, val title: String, val body: Stri
 
 private val perks = listOf(
     Perk(Icons.Rounded.Gradient, "Privacy Shield", "The screen darkens and scrambles the instant someone looks over your shoulder. Up close you can still read it; from beside you they can't."),
-    Perk(Icons.Rounded.VisibilityOff, "Blackout", "Or go further: the screen turns black the moment a peek starts. One tap brings it back."),
     Perk(Icons.Rounded.AppShortcut, "Protected apps", "Keep the shield on just for banking, chats and photos, and nowhere else."),
     Perk(Icons.Rounded.PersonSearch, "Someone-else alert", "If someone other than you is using your unlocked phone, it's quietly logged with a photo."),
-    Perk(Icons.Rounded.FileDownload, "Full history export", "Every peek as a spreadsheet, whenever you want it."),
 )
 
 @Composable

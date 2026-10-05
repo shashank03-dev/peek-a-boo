@@ -39,7 +39,7 @@ import kotlinx.coroutines.withContext
 
 private data class AppRow(val pkg: String, val label: String, val icon: ImageBitmap)
 
-/** Pro: pick the apps the Privacy Shield and Blackout should protect. */
+/** Pro: pick the apps the Privacy Shield should protect. */
 @Composable
 fun AppsScreen(vm: MainViewModel) {
     val ctx = LocalContext.current
@@ -71,7 +71,7 @@ fun AppsScreen(vm: MainViewModel) {
             Text("PRIVACY SHIELD", style = Eyebrow, color = Ink.TextFaint)
             Spacer(Modifier.height(8.dp))
             Text("Protected apps", style = MaterialTheme.typography.displaySmall, color = Ink.Text)
-            Section(footer = "When on, the shield and blackout only switch on while one of the apps below is open. Peeks are still counted everywhere.") {
+            Section(footer = "When on, the shield only switches on while one of the apps below is open. Peeks are still counted everywhere.") {
                 ListRow("Only in protected apps", icon = Icons.Rounded.AppShortcut, showDivider = !usageAccess || !s.protectedOnly, onClick = { vm.setProtectedOnly(!s.protectedOnly) }, chevron = false, trailing = {
                     PeekSwitch(s.protectedOnly, vm::setProtectedOnly)
                 })

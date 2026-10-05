@@ -48,8 +48,7 @@ data class GuardSettings(
     val shieldStyle: ShieldStyle = ShieldStyle.Louver,
     /** Shield opacity in percent; capped so touches still reach the app underneath. */
     val shieldStrength: Int = 70,
-    val blackoutOnPeek: Boolean = false,
-    /** Shield and blackout only kick in while one of [protectedApps] is open. */
+    /** The shield only kicks in while one of [protectedApps] is open. */
     val protectedOnly: Boolean = false,
     val protectedApps: Set<String> = emptySet(),
     val strangerAlert: Boolean = true,
@@ -69,7 +68,6 @@ class SettingsRepository(private val context: Context) {
         val shieldMode = intPreferencesKey("shield_mode")
         val shieldStyle = intPreferencesKey("shield_style")
         val shieldStrength = intPreferencesKey("shield_strength")
-        val blackout = booleanPreferencesKey("blackout_on_peek")
         val protectedOnly = booleanPreferencesKey("protected_only")
         val protectedApps = stringSetPreferencesKey("protected_apps")
         val stranger = booleanPreferencesKey("stranger_alert")
@@ -93,7 +91,6 @@ class SettingsRepository(private val context: Context) {
         shieldMode = ShieldMode.entries.getOrElse(this[K.shieldMode] ?: 1) { ShieldMode.OnPeek },
         shieldStyle = ShieldStyle.entries.getOrElse(this[K.shieldStyle] ?: 0) { ShieldStyle.Louver },
         shieldStrength = this[K.shieldStrength] ?: 70,
-        blackoutOnPeek = this[K.blackout] ?: false,
         protectedOnly = this[K.protectedOnly] ?: false,
         protectedApps = this[K.protectedApps] ?: emptySet(),
         strangerAlert = this[K.stranger] ?: true,
@@ -114,7 +111,6 @@ class SettingsRepository(private val context: Context) {
     suspend fun setShieldMode(v: ShieldMode) = context.dataStore.edit { it[K.shieldMode] = v.ordinal }
     suspend fun setShieldStyle(v: ShieldStyle) = context.dataStore.edit { it[K.shieldStyle] = v.ordinal }
     suspend fun setShieldStrength(v: Int) = context.dataStore.edit { it[K.shieldStrength] = v }
-    suspend fun setBlackoutOnPeek(v: Boolean) = context.dataStore.edit { it[K.blackout] = v }
     suspend fun setProtectedOnly(v: Boolean) = context.dataStore.edit { it[K.protectedOnly] = v }
     suspend fun setProtectedApp(pkg: String, on: Boolean) = context.dataStore.edit {
         val cur = it[K.protectedApps] ?: emptySet()
