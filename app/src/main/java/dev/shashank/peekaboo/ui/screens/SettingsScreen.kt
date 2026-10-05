@@ -102,8 +102,12 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         val pillTop = overlay.cameraBottomPx() + ((offset.toInt() + 6) * density).toInt()
         if (!overlay.show(pillTop) { spec -> NotchPill(peepers = 2, visible = visible.value, spec = spec) }) return
         scope.launch {
-            delay(3000); visible.value = false
-            delay(NOTCH_EXIT_MS); overlay.hide()
+            try {
+                delay(3000); visible.value = false
+                delay(NOTCH_EXIT_MS)
+            } finally {
+                overlay.hide()
+            }
         }
     }
 
@@ -118,9 +122,12 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         shield.show(s.shieldStyle, strength.toInt())
         previewingShield = true
         scope.launch {
-            delay(5000)
-            shield.hide()
-            previewingShield = false
+            try {
+                delay(5000)
+            } finally {
+                shield.hide()
+                previewingShield = false
+            }
         }
     }
 

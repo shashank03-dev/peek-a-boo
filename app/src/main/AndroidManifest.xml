@@ -12,7 +12,6 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- Pro "protected apps": which app is in front. Granted by the user in Settings › Usage access. -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"
@@ -58,7 +57,7 @@
         <service
             android:name=".service.GuardTileService"
             android:exported="true"
-            android:icon="@drawable/ic_eye"
+            android:icon="@drawable/ic_notification"
             android:label="@string/tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

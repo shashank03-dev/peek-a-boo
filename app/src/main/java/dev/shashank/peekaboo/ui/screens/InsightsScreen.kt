@@ -241,11 +241,18 @@ internal fun PeekDetail(event: PeekEvent, onDelete: () -> Unit) {
         Spacer(Modifier.height(4.dp))
         Text(fmt.format(Date(event.startedAt)), style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted)
         Spacer(Modifier.height(16.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MiniStat("Duration", Reports.formatDuration(event.durationMs), Modifier.weight(1f))
-            MiniStat("People", "${event.maxPeepers}", Modifier.weight(1f))
+        if (event.isStranger) {
+            Text(
+                "Your face wasn't in view while someone else was using the unlocked phone.",
+                style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, textAlign = TextAlign.Center,
+            )
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                MiniStat("Duration", Reports.formatDuration(event.durationMs), Modifier.weight(1f))
+                MiniStat("People", "${event.maxPeepers}", Modifier.weight(1f))
+            }
         }
         Spacer(Modifier.height(24.dp))
-        SecondaryButton("Delete this peek", color = Ink.Alert, icon = Icons.Rounded.DeleteOutline, onClick = onDelete)
+        SecondaryButton(if (event.isStranger) "Delete this entry" else "Delete this peek", color = Ink.Alert, icon = Icons.Rounded.DeleteOutline, onClick = onDelete)
     }
 }

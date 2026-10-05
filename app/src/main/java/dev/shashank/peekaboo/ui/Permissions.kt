@@ -1,7 +1,6 @@
 package dev.shashank.peekaboo.ui
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -26,9 +25,14 @@ object Permissions {
     fun overlayIntent(ctx: Context) =
         Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${ctx.packageName}"))
 
-    @SuppressLint("BatteryLife")
+    /**
+     * Where the user can make the app's battery use unrestricted. Asking directly needs a
+     * permission Google Play restricts, so this opens settings instead: the app's own page on
+     * Android 12+ (App battery usage › Unrestricted), the optimisation list before that.
+     */
     fun batteryIntent(ctx: Context) =
-        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${ctx.packageName}"))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) appSettingsIntent(ctx)
+        else Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
 
     fun appSettingsIntent(ctx: Context) =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${ctx.packageName}"))

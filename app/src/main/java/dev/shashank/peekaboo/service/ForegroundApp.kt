@@ -22,7 +22,12 @@ class ForegroundApp(private val context: Context) {
 
     /** Package of the app in front, refreshed from events since the last call. */
     fun packageName(now: Long = System.currentTimeMillis()): String? {
-        val from = if (lastQuery == 0L) now - 60 * 60_000 else lastQuery - 2_000
+        // Without usage access the query just comes back empty; start over once it's granted.
+        if (!granted(context)) {
+            lastQuery = 0L
+            return null
+        }
+        val from = if (lastQuery == 0L) now - 6 * 60 * 60_000 else lastQuery - 2_000
         lastQuery = now
         val events = runCatching { usm.queryEvents(from, now) }.getOrNull() ?: return current
         val e = UsageEvents.Event()

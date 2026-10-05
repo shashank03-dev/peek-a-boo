@@ -86,12 +86,13 @@ class ProStore(private val context: Context, private val settings: SettingsRepos
             refresh()
             return
         }
+        if (client.connectionState == BillingClient.ConnectionState.CONNECTING) return
         client.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     _status.value = StoreStatus.Ready
                     refresh()
-                } else {
+                } else if (!client.isReady) {
                     Log.i(TAG, "Billing unavailable: ${result.debugMessage}")
                     _status.value = StoreStatus.Unavailable
                 }

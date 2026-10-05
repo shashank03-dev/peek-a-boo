@@ -91,8 +91,8 @@ private val steps = listOf(
     Step(
         "Step 4 · Background",
         "Never\nnods off",
-        "Let Peek-a-Boo run unrestricted so Android doesn't put the guard to sleep.",
-        Icons.Rounded.BatteryChargingFull, "Allow background",
+        "Set Peek-a-Boo's battery use to Unrestricted so Android doesn't put the guard to sleep.",
+        Icons.Rounded.BatteryChargingFull, "Open battery settings",
     ),
 )
 

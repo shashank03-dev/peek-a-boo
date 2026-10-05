@@ -48,7 +48,7 @@ class BootReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val n = NotificationCompat.Builder(context, PeekApp.CHANNEL_ALERTS)
-            .setSmallIcon(R.drawable.ic_eye)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Resume Peek Guard")
             .setContentText("Tap to keep watching for shoulder surfers")
             .setAutoCancel(true)

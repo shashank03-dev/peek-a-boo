@@ -51,7 +51,9 @@ import dev.shashank.peekaboo.overlay.NotchOverlay
 import dev.shashank.peekaboo.overlay.ShieldOverlay
 import dev.shashank.peekaboo.overlay.NOTCH_EXIT_MS
 import dev.shashank.peekaboo.overlay.NotchPill
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,7 +86,8 @@ class GuardService : LifecycleService() {
     @Volatile private var settings = GuardSettings()
     @Volatile private var lastProcessed = 0L
     @Volatile private var lastFaceAt = 0L
-    @Volatile private var currentEventId: Long? = null
+    /** Database id of the open peek, still being inserted when the peek starts. */
+    @Volatile private var currentEvent: Deferred<Long>? = null
     @Volatile private var isPro = false
     @Volatile private var lastAppCheck = 0L
     /** The app in front is one the user asked to protect (always true when that filter is off). */
@@ -260,7 +263,7 @@ class GuardService : LifecycleService() {
             if (result.faces.isNotEmpty()) lastFaceAt = now
             GuardState.facesInView.value = result.faces.size
             GuardState.ownerInView.value = result.ownerInView
-            handle(tracker.onFrame(now, result.peepers.size), result)
+            handle(synchronized(tracker) { tracker.onFrame(now, result.peepers.size) }, result)
             watchForStranger(now, result)
         }
     }
@@ -296,11 +299,13 @@ class GuardService : LifecycleService() {
                 if (settings.haptics) buzz()
                 val sigs = frame.peepers.map { FaceSignature.toBytes(it.signature) }
                 val snapshot = if (settings.snapshots) frame.snapshotOf(frame.peepers) else null
+                val insert = lifecycleScope.async(Dispatchers.IO) {
+                    app.db.dao().insert(PeekEvent(startedAt = change.at, endedAt = change.at, maxPeepers = change.peepers))
+                }
+                currentEvent = insert
                 lifecycleScope.launch(Dispatchers.IO) {
-                    val dao = app.db.dao()
-                    val id = dao.insert(PeekEvent(startedAt = change.at, endedAt = change.at, maxPeepers = change.peepers))
-                    currentEventId = id
-                    dao.insertFaces(sigs.map { PeekFace(eventId = id, signature = it) })
+                    val id = insert.await()
+                    app.db.dao().insertFaces(sigs.map { PeekFace(eventId = id, signature = it) })
                     snapshot?.let { saveSnapshot(id, it) }
                 }
             }
@@ -311,7 +316,7 @@ class GuardService : LifecycleService() {
     }
 
     private fun endOpenSession() {
-        tracker.flush()?.let(::finishSession)
+        synchronized(tracker) { tracker.flush() }?.let(::finishSession)
     }
 
     private suspend fun saveSnapshot(id: Long, bmp: Bitmap) {
@@ -325,10 +330,10 @@ class GuardService : LifecycleService() {
     private fun finishSession(ended: PeekSessionTracker.Change.Ended) {
         GuardState.peekActive.value = false
         GuardState.peepersNow.value = 0
-        val id = currentEventId ?: return
-        currentEventId = null
+        val insert = currentEvent ?: return
+        currentEvent = null
         lifecycleScope.launch(Dispatchers.IO) {
-            app.db.dao().finish(id, ended.endedAt, ended.maxPeepers)
+            app.db.dao().finish(insert.await(), ended.endedAt, ended.maxPeepers)
         }
     }
 
@@ -417,7 +422,7 @@ class GuardService : LifecycleService() {
             else -> "$todayCount peeks caught today"
         }
         return NotificationCompat.Builder(this, PeekApp.CHANNEL_GUARD)
-            .setSmallIcon(R.drawable.ic_eye)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(text)
             .setOngoing(true)
