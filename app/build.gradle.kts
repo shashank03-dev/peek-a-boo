@@ -20,8 +20,8 @@ android {
         applicationId = "dev.shashank.peekaboo"
         minSdk = 26
         targetSdk = 36
-        versionCode = 5
-        versionName = "2.0.2"
+        versionCode = 6
+        versionName = "2.0.3"
 
         // Sideloaded builds have no Play billing to buy Pro through, so they can ship with Pro
         // unlocked: ./gradlew :app:assembleRelease -PunlockPro=true. Play builds leave it off.
@@ -61,6 +61,22 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+    testOptions {
+        unitTests {
+            // Robolectric needs the merged resources to render the real UI on the JVM.
+            isIncludeAndroidResources = true
+            all {
+                it.systemProperty("robolectric.pixelCopyRenderMode", "hardware")
+                it.maxHeapSize = "3g"
+                // Robolectric reaches into JDK internals that Java 17+ hides by default.
+                it.jvmArgs(
+                    "--add-exports=java.base/jdk.internal.access=ALL-UNNAMED",
+                    "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+                    "--add-opens=java.base/java.io=ALL-UNNAMED",
+                )
+            }
+        }
+    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -97,4 +113,10 @@ dependencies {
     implementation(libs.play.billing)
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.junit)
+    testImplementation(platform(libs.androidx.compose.bom))
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

@@ -257,10 +257,10 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                 "Someone-else alert",
                 subtitle = if (owner == null) "Set up your face first" else "Logs a photo if someone else uses your phone",
                 icon = Icons.Rounded.PersonSearch,
-                onClick = { vm.withPro { vm.setStrangerAlert(!s.strangerAlert) } },
+                onClick = if (owner == null) null else ({ vm.withPro { vm.setStrangerAlert(!s.strangerAlert) } }),
                 chevron = false,
                 showDivider = false,
-                trailing = { PeekSwitch(isPro && s.strangerAlert, { v -> vm.withPro { vm.setStrangerAlert(v) } }) },
+                trailing = { PeekSwitch(isPro && s.strangerAlert && owner != null, { v -> vm.withPro { vm.setStrangerAlert(v) } }, enabled = owner != null) },
             )
         }
 

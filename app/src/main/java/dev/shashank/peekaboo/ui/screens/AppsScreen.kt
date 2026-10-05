@@ -90,6 +90,14 @@ fun AppsScreen(vm: MainViewModel) {
                     CircularProgressIndicator(color = Ink.Accent, strokeWidth = 2.dp, modifier = Modifier.size(28.dp))
                 }
             }
+        } else if (list.isEmpty()) {
+            item {
+                Text(
+                    "No apps to show.",
+                    style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
+                    modifier = Modifier.fillMaxWidth().padding(24.dp),
+                )
+            }
         } else {
             items(list, key = { it.pkg }) { app ->
                 val on = app.pkg in s.protectedApps

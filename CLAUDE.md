@@ -33,7 +33,9 @@ keeps a daily report. The owner's face is enrolled so they are never counted as 
 ## Build
 
 ```sh
-./gradlew :app:testReleaseUnitTest      # unit tests
+./gradlew :app:testDebugUnitTest        # unit tests + AppTourTest: clicks through every screen on Robolectric,
+                                        # screenshots land in app/build/tour/ (no emulator needed)
+./gradlew :app:testReleaseUnitTest      # same tests against the release variant
 ./gradlew :app:assembleRelease -PunlockPro=true   # signed sideload APK (Pro unlocked) -> app/build/outputs/apk/release/app-release.apk
 cp app/build/outputs/apk/release/app-release.apk release/PeekABoo.apk
 ./gradlew :app:bundleRelease            # Play Store bundle (Pro sold through Play Billing) -> app/build/outputs/bundle/release/app-release.aab

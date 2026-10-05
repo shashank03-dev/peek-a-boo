@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /** One way to pay for Pro, as Google Play offers it to this user right now. */
@@ -81,8 +82,18 @@ class ProStore(private val context: Context, private val settings: SettingsRepos
         .enableAutoServiceReconnection()
         .build()
 
+    init {
+        // If Play never answers (no Play Store, or a stuck one) don't leave the paywall spinning
+        // forever: report billing as unavailable. A later answer from Play still wins.
+        scope.launch {
+            delay(CONNECT_TIMEOUT_MS)
+            if (_status.value == StoreStatus.Connecting) _status.value = StoreStatus.Unavailable
+        }
+    }
+
     fun start() {
         if (client.isReady) {
+            _status.value = StoreStatus.Ready
             refresh()
             return
         }
@@ -205,6 +216,7 @@ class ProStore(private val context: Context, private val settings: SettingsRepos
     companion object {
         private const val TAG = "ProStore"
         const val PRODUCT_ID = "peekaboo_pro"
+        private const val CONNECT_TIMEOUT_MS = 8_000L
 
         fun manageUrl(packageName: String) =
             "https://play.google.com/store/account/subscriptions?sku=$PRODUCT_ID&package=$packageName"
