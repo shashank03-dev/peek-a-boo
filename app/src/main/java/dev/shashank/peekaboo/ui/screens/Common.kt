@@ -110,7 +110,7 @@ fun PeekRow(event: PeekEvent, onClick: () -> Unit) {
 @Composable
 fun TimelineItem(event: PeekEvent, first: Boolean, last: Boolean, showDay: Boolean, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
-        Column(Modifier.width(52.dp).padding(top = 18.dp), horizontalAlignment = Alignment.End) {
+        Column(Modifier.width(52.dp).padding(top = 16.dp), horizontalAlignment = Alignment.End) {
             if (showDay) Text(dayFmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Ink.TextMuted)
             Text(timeFmt.format(Date(event.startedAt)), style = MonoValue, color = Ink.Text)
             Text(ampmFmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Ink.TextFaint)

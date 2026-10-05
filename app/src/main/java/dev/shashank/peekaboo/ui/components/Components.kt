@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -76,7 +77,7 @@ fun Modifier.panel(shape: Shape = RoundedCornerShape(20.dp), color: Color = Ink.
 @Composable
 fun Panel(
     modifier: Modifier = Modifier,
-    padding: PaddingValues = PaddingValues(18.dp),
+    padding: PaddingValues = PaddingValues(24.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     Column(modifier.panel().padding(padding), content = content)
@@ -85,10 +86,10 @@ fun Panel(
 /** Screen header: small label over a large title. */
 @Composable
 fun ScreenHeader(title: String, eyebrow: String, modifier: Modifier = Modifier, trailing: @Composable (() -> Unit)? = null) {
-    Row(modifier.fillMaxWidth().padding(top = 14.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(eyebrow.uppercase(), style = Eyebrow, color = Ink.TextFaint)
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Text(title, style = MaterialTheme.typography.displaySmall, color = Ink.Text)
         }
         trailing?.invoke()
@@ -99,7 +100,7 @@ fun ScreenHeader(title: String, eyebrow: String, modifier: Modifier = Modifier, 
 fun RoundIconButton(icon: ImageVector, contentDescription: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(42.dp)
+            .size(44.dp)
             .bouncyClick(pressedScale = 0.9f, onClick = onClick)
             .panel(CircleShape),
         contentAlignment = Alignment.Center,
@@ -114,11 +115,11 @@ fun StatusChip(label: String, color: Color, live: Boolean, modifier: Modifier = 
     Row(
         modifier
             .panel(CircleShape)
-            .padding(start = 8.dp, end = 12.dp, top = 6.dp, bottom = 6.dp),
+            .padding(start = 8.dp, end = 12.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PulseDot(color, live = live)
-        Spacer(Modifier.width(6.dp))
+        Spacer(Modifier.width(4.dp))
         Text(label.uppercase(), style = Eyebrow, color = Ink.Text)
     }
 }
@@ -155,9 +156,9 @@ fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Un
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
-            .height(42.dp)
-            .panel(RoundedCornerShape(14.dp))
-            .padding(3.dp)
+            .height(44.dp)
+            .panel(RoundedCornerShape(16.dp))
+            .padding(4.dp)
     ) {
         val segment = maxWidth / options.size
         val x by animateDpAsState(segment * selected, spring(dampingRatio = 0.8f, stiffness = Spring.StiffnessMediumLow), label = "seg")
@@ -166,7 +167,7 @@ fun SegmentedControl(options: List<String>, selected: Int, onSelect: (Int) -> Un
                 .offset(x = x)
                 .width(segment)
                 .fillMaxHeight()
-                .clip(RoundedCornerShape(11.dp))
+                .clip(RoundedCornerShape(12.dp))
                 .background(Ink.Sunken)
         )
         Row(Modifier.fillMaxWidth().fillMaxHeight()) {
@@ -197,7 +198,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
 /** Grouped list section. */
 @Composable
 fun Section(header: String? = null, footer: String? = null, content: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 10.dp)) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
         if (header != null) {
             Text(header.uppercase(), style = Eyebrow, color = Ink.TextFaint, modifier = Modifier.padding(start = 4.dp, bottom = 10.dp))
         }
@@ -207,7 +208,7 @@ fun Section(header: String? = null, footer: String? = null, content: @Composable
                 footer,
                 style = MaterialTheme.typography.bodySmall,
                 color = Ink.TextFaint,
-                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 10.dp),
+                modifier = Modifier.padding(start = 4.dp, end = 4.dp, top = 8.dp),
             )
         }
     }
@@ -244,17 +245,17 @@ fun ListRow(
             Modifier
                 .fillMaxWidth()
                 .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                .padding(horizontal = 16.dp, vertical = 13.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp).heightIn(min = 40.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
                 IconBadge(icon, iconTint)
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(16.dp))
             }
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleMedium, color = titleColor)
                 if (subtitle != null) {
-                    Spacer(Modifier.height(2.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(subtitle, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
                 }
             }
@@ -267,7 +268,7 @@ fun ListRow(
         if (showDivider) {
             Box(
                 Modifier
-                    .padding(start = if (icon != null) 64.dp else 16.dp)
+                    .padding(start = if (icon != null) 66.dp else 16.dp)
                     .fillMaxWidth()
                     .height(1.dp)
                     .background(Ink.Line)
@@ -341,6 +342,6 @@ fun Tag(text: String, container: Color, content: Color, modifier: Modifier = Mod
         text.uppercase(),
         style = Eyebrow,
         color = content,
-        modifier = modifier.clip(CircleShape).background(container).padding(horizontal = 9.dp, vertical = 4.dp),
+        modifier = modifier.clip(CircleShape).background(container).padding(horizontal = 8.dp, vertical = 4.dp),
     )
 }

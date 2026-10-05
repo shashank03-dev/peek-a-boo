@@ -72,24 +72,41 @@ val Mono = FontFamily(
     Font(R.font.jetbrainsmono_bold, FontWeight.Bold),
 )
 
-/** Small uppercase monospace label for section names, timestamps and units. */
-val Eyebrow = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 11.sp, letterSpacing = 0.08.em)
-val MonoValue = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+/**
+ * Type scale: four sizes, three weights.
+ *  56 Bold display  — hero numbers
+ *  30 Bold display  — screen titles, hero status
+ *  15 Regular / SemiBold — body, row titles, buttons
+ *  12 Regular / SemiBold — captions, labels, metadata
+ * Numbers use tabular figures so counts don't jitter as they change.
+ */
+private val Display = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum")
+private val Hero = Display.copy(fontSize = 56.sp, lineHeight = 60.sp, letterSpacing = (-0.03).em)
+private val Title = Display.copy(fontSize = 30.sp, lineHeight = 36.sp, letterSpacing = (-0.025).em)
+private val Body = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 15.sp, lineHeight = 22.sp, letterSpacing = (-0.01).em)
+private val BodyStrong = Body.copy(fontWeight = FontWeight.SemiBold)
+private val Caption = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp)
+
+/** Small uppercase monospace label for section names and timestamps (caption size). */
+val Eyebrow = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 12.sp, letterSpacing = 0.06.em)
+val MonoValue = TextStyle(fontFamily = Mono, fontWeight = FontWeight.Medium, fontSize = 12.sp)
 
 private val typography = Typography(
-    displayLarge = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 72.sp, lineHeight = 72.sp, letterSpacing = (-0.045).em),
-    displayMedium = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 46.sp, lineHeight = 48.sp, letterSpacing = (-0.04).em),
-    displaySmall = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 34.sp, lineHeight = 38.sp, letterSpacing = (-0.03).em),
-    headlineLarge = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 28.sp, lineHeight = 32.sp, letterSpacing = (-0.025).em),
-    headlineMedium = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 22.sp, lineHeight = 26.sp, letterSpacing = (-0.02).em),
-    titleLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, letterSpacing = (-0.015).em),
-    titleMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Medium, fontSize = 15.sp, letterSpacing = (-0.01).em),
-    bodyLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 23.sp, letterSpacing = (-0.01).em),
-    bodyMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp),
-    bodySmall = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Normal, fontSize = 12.5.sp, lineHeight = 17.sp),
-    labelLarge = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, letterSpacing = (-0.01).em),
-    labelMedium = TextStyle(fontFamily = Inter, fontWeight = FontWeight.Medium, fontSize = 13.sp),
-    labelSmall = TextStyle(fontFamily = Inter, fontWeight = FontWeight.SemiBold, fontSize = 11.sp),
+    displayLarge = Hero,
+    displayMedium = Hero,
+    displaySmall = Title,
+    headlineLarge = Title,
+    headlineMedium = Title,
+    headlineSmall = Title,
+    titleLarge = BodyStrong,
+    titleMedium = BodyStrong,
+    titleSmall = BodyStrong,
+    bodyLarge = Body,
+    bodyMedium = Body,
+    bodySmall = Caption,
+    labelLarge = BodyStrong,
+    labelMedium = Caption.copy(fontWeight = FontWeight.SemiBold),
+    labelSmall = Caption.copy(fontWeight = FontWeight.SemiBold),
 )
 
 @Composable

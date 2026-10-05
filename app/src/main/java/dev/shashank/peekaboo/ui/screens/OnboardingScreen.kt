@@ -207,7 +207,7 @@ internal fun GlyphHalo(icon: ImageVector) {
 
 @Composable
 internal fun ProgressSegments(count: Int, selected: Int) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         repeat(count) { i ->
             val fill by animateFloatAsState(if (i <= selected) 1f else 0f, spring(dampingRatio = 0.85f), label = "seg")
             Box(Modifier.weight(1f).height(3.dp).clip(CircleShape).background(Ink.Sunken)) {

@@ -145,7 +145,7 @@ private fun MainTabs(vm: MainViewModel, guardEnabled: Boolean) {
                 haze = haze,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = navBottom + 14.dp, start = 20.dp, end = 20.dp),
+                    .padding(bottom = navBottom + 16.dp, start = 20.dp, end = 20.dp),
             ) { tab = it }
         }
     }
@@ -157,6 +157,7 @@ internal fun FloatingTabBar(selected: Tab, haze: HazeState, modifier: Modifier, 
         modifier
             .fillMaxWidth()
             .height(TabBarHeight)
+            .shadow(16.dp, CircleShape, ambientColor = Color.Black, spotColor = Color.Black)
             .clip(CircleShape)
             .hazeChild(
                 haze,
@@ -168,7 +169,7 @@ internal fun FloatingTabBar(selected: Tab, haze: HazeState, modifier: Modifier, 
                 ),
             )
             .border(1.dp, Ink.Line, CircleShape)
-            .padding(6.dp),
+            .padding(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Tab.entries.forEach { t ->
@@ -206,7 +207,7 @@ private fun TabItem(tab: Tab, selected: Boolean, modifier: Modifier, onClick: ()
                 fontWeight = FontWeight.SemiBold,
                 color = fg,
                 maxLines = 1,
-                modifier = Modifier.padding(start = 6.dp),
+                modifier = Modifier.padding(start = 8.dp),
             )
         }
     }

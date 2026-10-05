@@ -1,5 +1,8 @@
 package dev.shashank.peekaboo.ui.screens
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -38,6 +41,8 @@ import coil.compose.AsyncImage
 import dev.shashank.peekaboo.data.PeekEvent
 import dev.shashank.peekaboo.data.Reports
 import dev.shashank.peekaboo.ui.MainViewModel
+import dev.shashank.peekaboo.ui.Permissions
+import dev.shashank.peekaboo.ui.components.PrimaryButton
 import dev.shashank.peekaboo.ui.components.BarChart
 import dev.shashank.peekaboo.ui.components.IconBadge
 import dev.shashank.peekaboo.ui.components.Panel
@@ -64,6 +69,9 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     val weekTotal by vm.weekTotal.collectAsStateWithLifecycle()
     val todayEvents by vm.todayEvents.collectAsStateWithLifecycle()
     val weekEvents by vm.weekEvents.collectAsStateWithLifecycle()
+    val settings by vm.settings.collectAsStateWithLifecycle()
+    val guardOn = settings?.guardEnabled == true
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { if (it) vm.setGuard(true) }
     var range by rememberSaveable { mutableIntStateOf(0) }
     var selected by remember { mutableStateOf<PeekEvent?>(null) }
     val list = if (range == 0) todayEvents else weekEvents.take(50)
@@ -93,7 +101,7 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
                             "$animated",
-                            style = MaterialTheme.typography.displayLarge.copy(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 64.sp, fontFeatureSettings = "tnum"),
+                            style = MaterialTheme.typography.displayLarge,
                             color = if (big > 0) Ink.Alert else Ink.Text,
                         )
                         Spacer(Modifier.width(12.dp))
@@ -101,7 +109,7 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                             if (r == 0) "by ${report.people} ${if (report.people == 1) "person" else "people"}"
                             else "about ${"%.1f".format(weekTotal / 7f)} a day",
                             style = MaterialTheme.typography.titleMedium, color = Ink.TextMuted,
-                            modifier = Modifier.padding(bottom = 14.dp),
+                            modifier = Modifier.padding(bottom = 12.dp),
                         )
                     }
                     Spacer(Modifier.height(16.dp))
@@ -132,12 +140,19 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                         IconBadge(Icons.Rounded.NightsStay, Ink.TextMuted, size = 48.dp)
                         Spacer(Modifier.height(16.dp))
-                        Text("Nothing to report", style = MaterialTheme.typography.titleLarge, color = Ink.Text)
+                        Text(if (guardOn) "Nothing to report" else "The guard is off", style = MaterialTheme.typography.titleLarge, color = Ink.Text)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Each peek shows up here with the time, how long they looked and a snapshot.",
+                            if (guardOn) "You're covered. Each peek will show up here with the time, how long they looked and a snapshot."
+                            else "Turn it on and every peek will land here with the time, how long they looked and a snapshot.",
                             style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted, textAlign = TextAlign.Center,
                         )
+                        if (!guardOn) {
+                            Spacer(Modifier.height(24.dp))
+                            PrimaryButton("Start guard") {
+                                if (Permissions.camera(ctx)) vm.setGuard(true) else cameraLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        }
                     }
                 }
             }
@@ -184,7 +199,7 @@ internal fun InsightCard(peeks: Int, peakHour: Int?, people: Int, bestDay: Int) 
         people > 1 -> "$people different people looked at your screen today. Repeat peekers are grouped by face, so each person counts once."
         else -> "One curious onlooker today. A quick tilt of the screen is usually enough."
     }
-    Panel(Modifier.fillMaxWidth(), padding = PaddingValues(16.dp)) {
+    Panel(Modifier.fillMaxWidth(), padding = PaddingValues(20.dp)) {
         Row {
             IconBadge(Icons.Rounded.Lightbulb, Ink.Text, size = 32.dp)
             Spacer(Modifier.width(12.dp))

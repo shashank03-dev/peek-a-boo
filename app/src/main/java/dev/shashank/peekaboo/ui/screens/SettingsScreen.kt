@@ -127,23 +127,23 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             "Counts a peek after ${s.sensitivity.dwellMs / 1000f}s of looking." +
                 if (s.sensitivity == Sensitivity.High) " Also catches people further away." else "",
             style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint,
-            modifier = Modifier.padding(start = 4.dp, top = 10.dp, bottom = 6.dp),
+            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp),
         )
 
         Section(footer = "Strict mode counts anyone who isn't your enrolled face, even if they're the one holding the phone.") {
-            ListRow("Strict mode", icon = Icons.Rounded.Shield, showDivider = false, trailing = {
+            ListRow("Strict mode", icon = Icons.Rounded.Shield, showDivider = false, onClick = { vm.setStrict(!s.strictMode) }, chevron = false, trailing = {
                 PeekSwitch(s.strictMode, vm::setStrict)
             })
         }
 
         Section(header = "Alerts") {
-            ListRow("Peek notch", subtitle = "Pops up under the camera", icon = Icons.Rounded.SmartButton, trailing = {
+            ListRow("Peek notch", subtitle = "Pops up under the camera", icon = Icons.Rounded.SmartButton, onClick = { vm.setShowNotch(!s.showNotch) }, chevron = false, trailing = {
                 PeekSwitch(s.showNotch, vm::setShowNotch)
             })
-            ListRow("Haptic tap", subtitle = "A soft buzz when a peek starts", icon = Icons.Rounded.Vibration, trailing = {
+            ListRow("Haptic tap", subtitle = "A soft buzz when a peek starts", icon = Icons.Rounded.Vibration, onClick = { vm.setHaptics(!s.haptics) }, chevron = false, trailing = {
                 PeekSwitch(s.haptics, vm::setHaptics)
             })
-            ListRow("Peeker snapshot", subtitle = "Kept privately on this phone", icon = Icons.Rounded.PhotoCamera, showDivider = false, trailing = {
+            ListRow("Peeker snapshot", subtitle = "Kept privately on this phone", icon = Icons.Rounded.PhotoCamera, showDivider = false, onClick = { vm.setSnapshots(!s.snapshots) }, chevron = false, trailing = {
                 PeekSwitch(s.snapshots, vm::setSnapshots)
             })
         }
@@ -151,7 +151,7 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         Text("NOTCH POSITION", style = Eyebrow, color = Ink.TextFaint, modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 10.dp))
         Column(Modifier.fillMaxWidth().panel().padding(16.dp)) {
             NotchMockup(offset)
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Slider(
                     value = offset,
@@ -189,7 +189,7 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         }
 
         Section(header = "Stay alive", footer = "The camera is only used while your phone is unlocked. Unrestricted battery stops Android from putting the guard to sleep.") {
-            ListRow("Start after reboot", icon = Icons.Rounded.PowerSettingsNew, trailing = {
+            ListRow("Start after reboot", icon = Icons.Rounded.PowerSettingsNew, onClick = { vm.setStartOnBoot(!s.startOnBoot) }, chevron = false, trailing = {
                 PeekSwitch(s.startOnBoot, vm::setStartOnBoot)
             })
             PermissionRow("Battery", if (perms.battery) "Unrestricted" else "Restricted", perms.battery, Icons.Rounded.BatteryChargingFull) { open(Permissions.batteryIntent(ctx)) }
@@ -264,7 +264,7 @@ internal fun SensitivityCard(level: Sensitivity, icon: ImageVector, selected: Bo
         Spacer(Modifier.height(8.dp))
         Text(level.label, style = MaterialTheme.typography.titleMedium, color = if (selected) Ink.Text else Ink.TextMuted)
         Spacer(Modifier.height(4.dp))
-        Text("${level.dwellMs / 1000f}s", style = MonoValue.copy(fontSize = 11.sp), color = Ink.TextFaint)
+        Text("${level.dwellMs / 1000f}s", style = MonoValue, color = Ink.TextFaint)
     }
 }
 

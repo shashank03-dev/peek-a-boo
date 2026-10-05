@@ -33,6 +33,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +45,7 @@ import dev.shashank.peekaboo.data.Reports
 import dev.shashank.peekaboo.service.GuardState
 import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.Permissions
+import dev.shashank.peekaboo.ui.TabBarHeight
 import dev.shashank.peekaboo.ui.components.EyeOrb
 import dev.shashank.peekaboo.ui.components.IconBadge
 import dev.shashank.peekaboo.ui.components.OrbMode
@@ -85,12 +87,16 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
     val requestCamera = { cameraLauncher.launch(Manifest.permission.CAMERA) }
     val openOverlay = { ctx.startActivity(Permissions.overlayIntent(ctx).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
 
+    // When the guard is off, starting it is the one thing to do: pin it in the thumb zone above the tab bar.
+    val pinStart = !enabled
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Box(Modifier.fillMaxSize()) {
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(
             start = 20.dp, end = 20.dp,
             top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-            bottom = contentPadding.calculateBottomPadding(),
+            bottom = contentPadding.calculateBottomPadding() + if (pinStart) 72.dp else 0.dp,
         ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -137,14 +143,8 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
             }
         }
 
-        item {
-            if (enabled) {
-                SecondaryButton("Pause guard", icon = Icons.Rounded.Pause) { vm.setGuard(false) }
-            } else {
-                PrimaryButton("Start guard", icon = Icons.Rounded.RemoveRedEye) {
-                    if (Permissions.camera(ctx)) vm.setGuard(true) else requestCamera()
-                }
-            }
+        if (enabled) {
+            item { SecondaryButton("Pause guard", icon = Icons.Rounded.Pause) { vm.setGuard(false) } }
         }
 
         val steps = listOf(
@@ -156,7 +156,7 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
             item { SetupCard(steps) }
         }
 
-        item { SectionLabel("Today", Modifier.padding(top = 16.dp)) }
+        item { SectionLabel("Today", Modifier.padding(top = 20.dp)) }
         item {
             Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PeeksTile(report.peeks, report.hourly.toList(), Modifier.weight(1.15f).fillMaxHeight().bouncyClick(onClick = openReport))
@@ -169,7 +169,7 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
 
         item {
             Row(
-                Modifier.fillMaxWidth().padding(top = 16.dp),
+                Modifier.fillMaxWidth().padding(top = 20.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SectionLabel("Latest", Modifier.weight(1f))
@@ -200,6 +200,21 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
             events.take(3).forEach { e -> item(key = e.id) { PeekRow(e, onClick = openReport) } }
         }
     }
+
+    if (pinStart) {
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .background(Brush.verticalGradient(listOf(Ink.Bg.copy(alpha = 0f), Ink.Bg), startY = 0f, endY = 48f))
+                .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = TabBarHeight + navBottom + 32.dp),
+        ) {
+            PrimaryButton("Start guard", icon = Icons.Rounded.RemoveRedEye) {
+                if (Permissions.camera(ctx)) vm.setGuard(true) else requestCamera()
+            }
+        }
+    }
+    }
 }
 
 private fun liveLine(faces: Int, ownerInView: Boolean, enrolled: Boolean): String = when {
@@ -213,12 +228,11 @@ private fun liveLine(faces: Int, ownerInView: Boolean, enrolled: Boolean): Strin
 internal fun TopBar(mode: OrbMode) {
     Row(Modifier.fillMaxWidth().padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
+            Text("Peek-a-Boo", style = MaterialTheme.typography.titleMedium, color = Ink.Text)
             Text(
                 SimpleDateFormat("EEEE, d MMMM", Locale.getDefault()).format(Date()),
                 style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted,
             )
-            Spacer(Modifier.height(4.dp))
-            Text("Peek-a-Boo", style = MaterialTheme.typography.headlineMedium, color = Ink.Text)
         }
         val (label, live) = when (mode) {
             OrbMode.Off -> "Off" to false
@@ -236,7 +250,7 @@ internal data class SetupStep(val title: String, val body: String, val icon: Ima
 internal fun SetupCard(steps: List<SetupStep>) {
     val doneCount = steps.count { it.done }
     val progress by animateFloatAsState(doneCount / steps.size.toFloat(), tween(600), label = "setup")
-    Panel(Modifier.fillMaxWidth(), padding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)) {
+    Panel(Modifier.fillMaxWidth(), padding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Finish setup", style = MaterialTheme.typography.titleLarge, color = Ink.Text, modifier = Modifier.weight(1f))
             Text("$doneCount/${steps.size}", style = MaterialTheme.typography.titleMedium.copy(fontFeatureSettings = "tnum"), color = Ink.TextMuted)
@@ -272,12 +286,12 @@ internal fun SetupCard(steps: List<SetupStep>) {
 internal fun PeeksTile(peeks: Int, hourly: List<Int>, modifier: Modifier) {
     val animated by animateIntAsState(peeks, tween(700), label = "peeks")
     val hot = peeks > 0
-    Column(modifier.panel().padding(16.dp)) {
+    Column(modifier.panel().padding(20.dp)) {
         Text("Peeks", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         Spacer(Modifier.weight(1f))
         Text(
             "$animated",
-            style = MaterialTheme.typography.displayMedium.copy(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontSize = 56.sp, fontFeatureSettings = "tnum"),
+            style = MaterialTheme.typography.displayLarge,
             color = if (hot) Ink.Alert else Ink.Text,
         )
         Spacer(Modifier.height(8.dp))
@@ -287,9 +301,9 @@ internal fun PeeksTile(peeks: Int, hourly: List<Int>, modifier: Modifier) {
 
 @Composable
 internal fun SmallTile(label: String, value: String, modifier: Modifier) {
-    Column(modifier.fillMaxWidth().panel().padding(16.dp)) {
+    Column(modifier.fillMaxWidth().panel().padding(20.dp)) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         Spacer(Modifier.height(8.dp))
-        Text(value, style = MaterialTheme.typography.headlineLarge.copy(fontFamily = InterDisplay, fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"), color = Ink.Text, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.headlineLarge, color = Ink.Text, maxLines = 1)
     }
 }

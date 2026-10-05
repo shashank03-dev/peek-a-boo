@@ -13,6 +13,10 @@ import androidx.camera.core.resolutionselector.ResolutionStrategy
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import dev.shashank.peekaboo.ui.TabBarHeight
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
@@ -96,6 +100,7 @@ private const val TARGET_SAMPLES = 20
 fun FaceScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     val owner by vm.owner.collectAsStateWithLifecycle()
     var mode by remember { mutableStateOf(FaceMode.Overview) }
+    var justEnrolled by remember { mutableStateOf(false) }
     val ctx = LocalContext.current
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
         if (ok) mode = FaceMode.Enroll
@@ -115,12 +120,14 @@ fun FaceScreen(vm: MainViewModel, contentPadding: PaddingValues) {
                 contentPadding = contentPadding,
                 onEnroll = startEnroll,
                 onTest = { mode = FaceMode.Test },
-                onRemove = { vm.clearOwner() },
+                onRemove = { vm.clearOwner(); justEnrolled = false },
+                celebrate = justEnrolled,
             )
             FaceMode.Enroll -> EnrollView(
                 contentPadding = contentPadding,
                 onDone = {
                     vm.saveOwner(it)
+                    justEnrolled = true
                     mode = FaceMode.Overview
                 },
                 onCancel = { mode = FaceMode.Overview },
@@ -132,11 +139,18 @@ fun FaceScreen(vm: MainViewModel, contentPadding: PaddingValues) {
 
 /** Face glyph on a disc inside a tick ring: lime ticks and a check once enrolled, a scan line before. */
 @Composable
-internal fun FaceBadge(enrolled: Boolean, size: Dp) {
+internal fun FaceBadge(enrolled: Boolean, size: Dp, celebrate: Boolean = false) {
     val t = rememberInfiniteTransition(label = "scan")
     val scan by t.animateFloat(0f, 1f, infiniteRepeatable(tween(2400, easing = LinearEasing)), label = "line")
+    val haptics = LocalHapticFeedback.current
+    // Right after enrolling, the ring sweeps closed and the check pops in: the moment it "knows" you.
+    val ring = remember { Animatable(if (enrolled && !celebrate) 1f else 0f) }
+    LaunchedEffect(enrolled) {
+        ring.animateTo(if (enrolled) 1f else 0f, tween(if (celebrate) 900 else 300, easing = FastOutSlowInEasing))
+        if (enrolled && celebrate) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+    }
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
-        TickRing(if (enrolled) 1f else 0f, Modifier.size(size))
+        TickRing(ring.value, Modifier.size(size))
         Box(
             Modifier
                 .size(size * 0.66f)
@@ -153,10 +167,14 @@ internal fun FaceBadge(enrolled: Boolean, size: Dp) {
                 }
             }
         }
-        if (enrolled) {
+        AnimatedVisibility(
+            visible = enrolled && ring.value > 0.98f,
+            enter = scaleIn(spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow), initialScale = 0.3f) + fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomEnd),
+        ) {
             Box(
                 Modifier
-                    .align(Alignment.BottomEnd)
                     .padding(end = size * 0.12f, bottom = size * 0.12f)
                     .size(size * 0.2f)
                     .clip(CircleShape)
@@ -177,22 +195,25 @@ internal fun FaceOverview(
     onEnroll: () -> Unit,
     onTest: () -> Unit,
     onRemove: () -> Unit,
+    celebrate: Boolean = false,
 ) {
     var confirmRemove by remember { mutableStateOf(false) }
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Box(Modifier.fillMaxSize()) {
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp)
             .padding(top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding())
-            .padding(bottom = contentPadding.calculateBottomPadding()),
+            .padding(bottom = contentPadding.calculateBottomPadding() + if (owner == null) 72.dp else 0.dp),
     ) {
         ScreenHeader("You", if (owner != null) "Face ID on" else "Face ID off")
         Spacer(Modifier.height(8.dp))
-        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { FaceBadge(owner != null, 200.dp) }
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { FaceBadge(owner != null, 200.dp, celebrate) }
         Spacer(Modifier.height(24.dp))
         Text(
-            if (owner != null) "You're recognised" else "Teach it your face",
+            when { owner == null -> "Teach it your face"; celebrate -> "You're all set"; else -> "You're recognised" },
             style = MaterialTheme.typography.headlineLarge, color = Ink.Text,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth(),
         )
@@ -203,10 +224,8 @@ internal fun FaceOverview(
             style = MaterialTheme.typography.bodyMedium, color = Ink.TextMuted,
             textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp),
         )
-        Spacer(Modifier.height(24.dp))
-        if (owner == null) {
-            PrimaryButton("Scan my face", icon = Icons.Rounded.Fingerprint, onClick = onEnroll)
-        } else {
+        if (owner != null) {
+            Spacer(Modifier.height(24.dp))
             val fmt = SimpleDateFormat("d MMM yyyy", Locale.getDefault())
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 FactTile("Samples", "${owner.samples.size}", Modifier.weight(1f))
@@ -220,10 +239,21 @@ internal fun FaceOverview(
         }
         Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Lock, null, tint = Ink.TextFaint, modifier = Modifier.size(13.dp))
-            Spacer(Modifier.width(6.dp))
+            Icon(Icons.Rounded.Lock, null, tint = Ink.TextFaint, modifier = Modifier.size(12.dp))
+            Spacer(Modifier.width(8.dp))
             Text("Stored on this phone as a pattern, not a photo.", style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint, maxLines = 1)
         }
+    }
+    if (owner == null) {
+        // Primary action in the thumb zone, just above the tab bar.
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .padding(start = 20.dp, end = 20.dp, bottom = TabBarHeight + navBottom + 32.dp),
+        ) {
+            PrimaryButton("Scan my face", icon = Icons.Rounded.Fingerprint, onClick = onEnroll)
+        }
+    }
     }
 
     if (confirmRemove) {
@@ -427,10 +457,10 @@ private fun TestView(owner: OwnerProfile?, contentPadding: PaddingValues, onClos
                 Text("${(animatedMatch * 100).toInt()}%", style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"), color = Ink.Text)
             }
             Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)).background(Ink.Sunken)) {
+            Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)).background(Ink.Sunken)) {
                 Box(Modifier.fillMaxWidth(animatedMatch).fillMaxHeight().clip(RoundedCornerShape(50)).background(color))
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
             Text("Ask a friend to look at the camera. They should show up as a stranger.", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         }
         Spacer(Modifier.weight(1f))
