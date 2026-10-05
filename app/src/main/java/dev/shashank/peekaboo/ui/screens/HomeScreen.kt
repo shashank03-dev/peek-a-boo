@@ -5,6 +5,13 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.animateColorAsState
+import dev.shashank.peekaboo.ui.components.BlurText
+import dev.shashank.peekaboo.ui.components.RollingCounter
+import dev.shashank.peekaboo.ui.components.SpringCheck
+import dev.shashank.peekaboo.ui.components.SwipeToDelete
+import dev.shashank.peekaboo.ui.components.staggerIn
+import dev.shashank.peekaboo.ui.components.strike
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -108,13 +115,12 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
                 Spacer(Modifier.height(8.dp))
                 AnimatedContent(
                     targetState = mode,
-                    transitionSpec = {
-                        (fadeIn(tween(300)) + slideInVertically { it / 3 }) togetherWith (fadeOut(tween(150)) + slideOutVertically { -it / 3 })
-                    },
+                    // The headline animates itself word by word; the container just crossfades.
+                    transitionSpec = { fadeIn(tween(220, delayMillis = 60)) togetherWith fadeOut(tween(120)) },
                     label = "status",
                 ) { m ->
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
+                        BlurText(
                             when (m) {
                                 OrbMode.Off -> "Guard is off"
                                 OrbMode.Idle -> "On standby"
@@ -123,7 +129,6 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
                             },
                             style = MaterialTheme.typography.headlineLarge,
                             color = if (m == OrbMode.Alert) Ink.Alert else Ink.Text,
-                            textAlign = TextAlign.Center,
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
@@ -161,7 +166,7 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
             Row(Modifier.height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 PeeksTile(report.peeks, report.hourly.toList(), Modifier.weight(1.15f).fillMaxHeight().bouncyClick(onClick = openReport))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    SmallTile("People", "${report.people}", Modifier.bouncyClick(onClick = openReport))
+                    SmallTile("People", "${report.people}", Modifier.bouncyClick(onClick = openReport), count = report.people)
                     SmallTile("Longest", Reports.formatDuration(report.longestPeekMs), Modifier.bouncyClick(onClick = openReport))
                 }
             }
@@ -197,7 +202,13 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
                 }
             }
         } else {
-            events.take(3).forEach { e -> item(key = e.id) { PeekRow(e, onClick = openReport) } }
+            events.take(3).forEachIndexed { i, e ->
+                item(key = e.id) {
+                    SwipeToDelete(onDelete = { vm.deleteEvent(e) }, modifier = Modifier.animateItem().staggerIn(i)) {
+                        PeekRow(e, onClick = openReport)
+                    }
+                }
+            }
         }
     }
 
@@ -209,7 +220,7 @@ fun HomeScreen(vm: MainViewModel, contentPadding: PaddingValues, openReport: () 
                 .background(Brush.verticalGradient(listOf(Ink.Bg.copy(alpha = 0f), Ink.Bg), startY = 0f, endY = 48f))
                 .padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = TabBarHeight + navBottom + 32.dp),
         ) {
-            PrimaryButton("Start guard", icon = Icons.Rounded.RemoveRedEye) {
+            PrimaryButton("Start guard", icon = Icons.Rounded.RemoveRedEye, spark = true) {
                 if (Permissions.camera(ctx)) vm.setGuard(true) else requestCamera()
             }
         }
@@ -269,11 +280,12 @@ internal fun SetupCard(steps: List<SetupStep>) {
                     .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (s.done) IconBadge(Icons.Rounded.Check, Ink.Accent, size = 32.dp, background = Ink.AccentSoft)
-                else IconBadge(s.icon, Ink.Text, size = 32.dp)
+                SpringCheck(s.done)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text(s.title, style = MaterialTheme.typography.titleMedium, color = if (s.done) Ink.TextFaint else Ink.Text)
+                    val strike by animateFloatAsState(if (s.done) 1f else 0f, tween(320, delayMillis = 120), label = "strike")
+                    val titleColor by animateColorAsState(if (s.done) Ink.TextFaint else Ink.Text, label = "stepTitle")
+                    Text(s.title, style = MaterialTheme.typography.titleMedium, color = titleColor, modifier = Modifier.strike(strike))
                     Text(s.body, style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint)
                 }
                 if (!s.done) Tag("Set up", Ink.Text, Ink.Bg)
@@ -284,26 +296,23 @@ internal fun SetupCard(steps: List<SetupStep>) {
 
 @Composable
 internal fun PeeksTile(peeks: Int, hourly: List<Int>, modifier: Modifier) {
-    val animated by animateIntAsState(peeks, tween(700), label = "peeks")
     val hot = peeks > 0
+    val numberColor by animateColorAsState(if (hot) Ink.Alert else Ink.Text, label = "peeksColor")
     Column(modifier.panel().padding(20.dp)) {
         Text("Peeks", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         Spacer(Modifier.weight(1f))
-        Text(
-            "$animated",
-            style = MaterialTheme.typography.displayLarge,
-            color = if (hot) Ink.Alert else Ink.Text,
-        )
+        RollingCounter(peeks, MaterialTheme.typography.displayLarge, numberColor)
         Spacer(Modifier.height(8.dp))
         Sparkline(hourly, if (hot) Ink.Alert else Ink.LineStrong, Modifier.fillMaxWidth().height(28.dp))
     }
 }
 
 @Composable
-internal fun SmallTile(label: String, value: String, modifier: Modifier) {
+internal fun SmallTile(label: String, value: String, modifier: Modifier, count: Int? = null) {
     Column(modifier.fillMaxWidth().panel().padding(20.dp)) {
         Text(label, style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
         Spacer(Modifier.height(8.dp))
-        Text(value, style = MaterialTheme.typography.headlineLarge, color = Ink.Text, maxLines = 1)
+        if (count != null) RollingCounter(count, MaterialTheme.typography.headlineLarge, Ink.Text)
+        else Text(value, style = MaterialTheme.typography.headlineLarge, color = Ink.Text, maxLines = 1)
     }
 }

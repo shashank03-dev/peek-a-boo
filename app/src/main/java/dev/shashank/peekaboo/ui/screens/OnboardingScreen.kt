@@ -48,6 +48,7 @@ import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.Permissions
 import dev.shashank.peekaboo.ui.components.EyeOrb
 import dev.shashank.peekaboo.ui.components.PrimaryButton
+import dev.shashank.peekaboo.ui.components.RotatingWords
 import dev.shashank.peekaboo.ui.components.OrbMode
 import dev.shashank.peekaboo.ui.components.bouncyClick
 import dev.shashank.peekaboo.ui.rememberPermissions
@@ -156,16 +157,20 @@ fun OnboardingScreen(vm: MainViewModel) {
                     Spacer(Modifier.height(40.dp))
                     Text(s.eyebrow.uppercase(), style = Eyebrow, color = Ink.TextMuted)
                     Spacer(Modifier.height(12.dp))
-                    Text(
-                        s.title,
-                        style = MaterialTheme.typography.displaySmall,
-                        color = Ink.Text,
-                    )
+                    if (i == 0) {
+                        // React Bits "RotatingText": the verb cycles, letter by letter.
+                        val st = MaterialTheme.typography.displaySmall
+                        Text("Know when someone", style = st, color = Ink.Text)
+                        RotatingWords(listOf("reads", "watches", "glances at", "peeks at"), st, Ink.Accent)
+                        Text("your screen.", style = st, color = Ink.Text)
+                    } else {
+                        Text(s.title, style = MaterialTheme.typography.displaySmall, color = Ink.Text)
+                    }
                     Spacer(Modifier.height(16.dp))
                     Text(s.body, style = MaterialTheme.typography.bodyLarge, color = Ink.TextMuted)
                 }
             }
-            PrimaryButton(step.cta, onClick = ::act)
+            PrimaryButton(step.cta, spark = true, onClick = ::act)
             Spacer(Modifier.height(8.dp))
             Box(Modifier.fillMaxWidth().height(44.dp), contentAlignment = Alignment.Center) {
                 if (index != 0) {

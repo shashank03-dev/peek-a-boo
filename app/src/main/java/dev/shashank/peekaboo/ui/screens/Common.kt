@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import dev.shashank.peekaboo.data.PeekEvent
 import dev.shashank.peekaboo.data.Reports
+import dev.shashank.peekaboo.ui.components.SwipeToDelete
 import dev.shashank.peekaboo.ui.components.bouncyClick
 import dev.shashank.peekaboo.ui.components.panel
 import dev.shashank.peekaboo.ui.theme.Eyebrow
@@ -108,8 +109,16 @@ fun PeekRow(event: PeekEvent, onClick: () -> Unit) {
 
 /** One stop on the Activity timeline: time on the left, a node on the rail, the peek on the right. */
 @Composable
-fun TimelineItem(event: PeekEvent, first: Boolean, last: Boolean, showDay: Boolean, onClick: () -> Unit) {
-    Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
+fun TimelineItem(
+    event: PeekEvent,
+    first: Boolean,
+    last: Boolean,
+    showDay: Boolean,
+    modifier: Modifier = Modifier,
+    onDelete: () -> Unit = {},
+    onClick: () -> Unit,
+) {
+    Row(modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Column(Modifier.width(52.dp).padding(top = 16.dp), horizontalAlignment = Alignment.End) {
             if (showDay) Text(dayFmt.format(Date(event.startedAt)).uppercase(), style = Eyebrow, color = Ink.TextMuted)
             Text(timeFmt.format(Date(event.startedAt)), style = MonoValue, color = Ink.Text)
@@ -123,10 +132,10 @@ fun TimelineItem(event: PeekEvent, first: Boolean, last: Boolean, showDay: Boole
             drawCircle(Ink.Bg, 6.dp.toPx(), Offset(x, nodeY))
             drawCircle(Ink.Alert, 4.dp.toPx(), Offset(x, nodeY))
         }
+        SwipeToDelete(onDelete = onDelete, modifier = Modifier.weight(1f).padding(vertical = 4.dp)) {
         Row(
             Modifier
-                .weight(1f)
-                .padding(vertical = 4.dp)
+                .fillMaxWidth()
                 .bouncyClick(onClick = onClick)
                 .panel(RoundedCornerShape(16.dp))
                 .padding(12.dp),
@@ -140,6 +149,7 @@ fun TimelineItem(event: PeekEvent, first: Boolean, last: Boolean, showDay: Boole
                 Text("Watched for ${Reports.formatDuration(event.durationMs)}", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
             }
             PeoplePill(event.maxPeepers)
+        }
         }
     }
 }

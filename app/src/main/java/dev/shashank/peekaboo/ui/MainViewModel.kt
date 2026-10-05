@@ -13,12 +13,16 @@ import dev.shashank.peekaboo.data.PeekEvent
 import dev.shashank.peekaboo.data.Reports
 import dev.shashank.peekaboo.data.Sensitivity
 import dev.shashank.peekaboo.service.GuardService
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -50,9 +54,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    /** Peeks deleted in the UI but still undoable: hidden everywhere until the undo window closes. */
+    private val hidden = MutableStateFlow<Set<Long>>(emptySet())
+    private val _undo = MutableStateFlow<PeekEvent?>(null)
+    val undo: StateFlow<PeekEvent?> = _undo.asStateFlow()
+    private var commitJob: Job? = null
+
     val weekEvents: StateFlow<List<PeekEvent>> = clock
         .map { Reports.startOfDay(it, 6) }
         .flatMapLatest { dao.eventsSince(it) }
+        .combine(hidden) { list, h -> if (h.isEmpty()) list else list.filter { it.id !in h } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val todayEvents: StateFlow<List<PeekEvent>> = weekEvents
@@ -93,12 +104,49 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun saveOwner(profile: OwnerProfile) = viewModelScope.launch(Dispatchers.IO) { app.owner.save(profile) }
     fun clearOwner() = viewModelScope.launch(Dispatchers.IO) { app.owner.clear() }
 
-    fun deleteEvent(event: PeekEvent) = viewModelScope.launch(Dispatchers.IO) {
-        event.snapshotPath?.let { File(it).delete() }
-        dao.delete(event.id)
+    /** Hides the peek right away and offers an undo; it's only really deleted when the toast goes away. */
+    fun deleteEvent(event: PeekEvent) {
+        commitPending()
+        hidden.update { it + event.id }
+        _undo.value = event
+        commitJob = viewModelScope.launch {
+            delay(4500)
+            commitPending()
+        }
+    }
+
+    fun undoDelete() {
+        commitJob?.cancel()
+        val e = _undo.value ?: return
+        _undo.value = null
+        hidden.update { it - e.id }
+    }
+
+    fun dismissUndo() {
+        commitJob?.cancel()
+        commitPending()
+    }
+
+    private fun commitPending(scope: CoroutineScope = viewModelScope) {
+        val e = _undo.value ?: return
+        _undo.value = null
+        scope.launch(Dispatchers.IO) {
+            e.snapshotPath?.let { File(it).delete() }
+            dao.delete(e.id)
+            hidden.update { it - e.id }
+        }
+    }
+
+    override fun onCleared() {
+        // The undo window is still open: finish the delete outside the dying view model scope.
+        commitPending(CoroutineScope(Dispatchers.IO))
+        super.onCleared()
     }
 
     fun clearHistory() = viewModelScope.launch(Dispatchers.IO) {
+        commitJob?.cancel()
+        _undo.value = null
+        hidden.value = emptySet()
         dao.allSnapshots().forEach { File(it).delete() }
         dao.clear()
     }

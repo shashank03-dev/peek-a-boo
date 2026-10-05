@@ -44,6 +44,8 @@ import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.Permissions
 import dev.shashank.peekaboo.ui.components.PrimaryButton
 import dev.shashank.peekaboo.ui.components.BarChart
+import dev.shashank.peekaboo.ui.components.RollingCounter
+import dev.shashank.peekaboo.ui.components.staggerIn
 import dev.shashank.peekaboo.ui.components.IconBadge
 import dev.shashank.peekaboo.ui.components.Panel
 import dev.shashank.peekaboo.ui.components.RoundIconButton
@@ -95,15 +97,10 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
         item {
             AnimatedContent(range, transitionSpec = { fadeIn(tween(250)) togetherWith fadeOut(tween(120)) }, label = "hero") { r ->
                 val big = if (r == 0) report.peeks else weekTotal
-                val animated by animateIntAsState(big, tween(700), label = "big")
                 Panel(Modifier.fillMaxWidth(), padding = PaddingValues(20.dp)) {
                     Text(if (r == 0) "Peeks today" else "Peeks in the last 7 days", style = MaterialTheme.typography.bodySmall, color = Ink.TextMuted)
                     Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            "$animated",
-                            style = MaterialTheme.typography.displayLarge,
-                            color = if (big > 0) Ink.Alert else Ink.Text,
-                        )
+                        RollingCounter(big, MaterialTheme.typography.displayLarge, if (big > 0) Ink.Alert else Ink.Text)
                         Spacer(Modifier.width(12.dp))
                         Text(
                             if (r == 0) "by ${report.people} ${if (report.people == 1) "person" else "people"}"
@@ -158,7 +155,11 @@ fun InsightsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             }
         } else {
             itemsIndexed(list, key = { _, e -> e.id }) { i, e ->
-                TimelineItem(e, first = i == 0, last = i == list.lastIndex, showDay = range == 1) { selected = e }
+                TimelineItem(
+                    e, first = i == 0, last = i == list.lastIndex, showDay = range == 1,
+                    modifier = Modifier.animateItem().staggerIn(i),
+                    onDelete = { vm.deleteEvent(e) },
+                ) { selected = e }
             }
         }
     }

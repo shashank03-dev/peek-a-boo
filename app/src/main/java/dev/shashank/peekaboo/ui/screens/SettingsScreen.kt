@@ -50,6 +50,8 @@ import dev.shashank.peekaboo.overlay.NotchOverlay
 import dev.shashank.peekaboo.overlay.NotchPill
 import dev.shashank.peekaboo.ui.MainViewModel
 import dev.shashank.peekaboo.ui.Permissions
+import dev.shashank.peekaboo.ui.components.ElasticSlider
+import dev.shashank.peekaboo.ui.components.HoldButton
 import dev.shashank.peekaboo.ui.components.ListRow
 import dev.shashank.peekaboo.ui.components.PeekSwitch
 import dev.shashank.peekaboo.ui.components.ScreenHeader
@@ -70,7 +72,6 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     val s = vm.settings.collectAsStateWithLifecycle().value ?: return
     val perms by rememberPermissions()
     val scope = rememberCoroutineScope()
-    var confirmClear by remember { mutableStateOf(false) }
     var offset by remember(s.notchOffsetDp) { mutableFloatStateOf(s.notchOffsetDp.toFloat()) }
 
     fun open(intent: Intent) = runCatching { ctx.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
@@ -153,19 +154,12 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             NotchMockup(offset)
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Slider(
+                ElasticSlider(
                     value = offset,
+                    range = -20f..80f,
                     onValueChange = { offset = it },
                     onValueChangeFinished = { vm.setNotchOffset(offset.toInt()) },
-                    valueRange = -20f..80f,
                     modifier = Modifier.weight(1f),
-                    colors = SliderDefaults.colors(
-                        thumbColor = Ink.Text,
-                        activeTrackColor = Ink.Text,
-                        inactiveTrackColor = Ink.Sunken,
-                        activeTickColor = Color.Transparent,
-                        inactiveTickColor = Color.Transparent,
-                    ),
                 )
                 Spacer(Modifier.width(12.dp))
                 Text("${offset.toInt()}dp", style = MonoValue, color = Ink.TextMuted, modifier = Modifier.width(44.dp))
@@ -198,13 +192,13 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             PermissionRow("Notifications", if (perms.notifications) "Allowed" else "Off", perms.notifications, Icons.Rounded.Notifications, last = true) { open(Permissions.appSettingsIntent(ctx)) }
         }
 
-        Section(header = "Data") {
-            ListRow(
-                "Clear peek history", subtitle = "Every peek and snapshot", icon = Icons.Rounded.DeleteForever, iconTint = Ink.Alert,
-                titleColor = Ink.Alert, chevron = false, showDivider = false,
-                onClick = { confirmClear = true },
-            )
-        }
+        Text("DATA", style = Eyebrow, color = Ink.TextFaint, modifier = Modifier.padding(start = 4.dp, top = 16.dp, bottom = 12.dp))
+        HoldButton("Hold to clear history", "History cleared", icon = Icons.Rounded.DeleteForever, onHold = vm::clearHistory)
+        Text(
+            "Deletes every recorded peek and snapshot. Hold to confirm.",
+            style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint,
+            modifier = Modifier.padding(start = 4.dp, top = 8.dp),
+        )
 
         Spacer(Modifier.height(16.dp))
         Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
@@ -212,21 +206,6 @@ fun SettingsScreen(vm: MainViewModel, contentPadding: PaddingValues) {
             Spacer(Modifier.height(4.dp))
             Text("Everything stays on this phone.", style = MaterialTheme.typography.bodySmall, color = Ink.TextFaint)
         }
-    }
-
-    if (confirmClear) {
-        AlertDialog(
-            onDismissRequest = { confirmClear = false },
-            containerColor = Ink.Raised,
-            title = { Text("Clear all peeks?", color = Ink.Text) },
-            text = { Text("This deletes every recorded peek and snapshot. It can't be undone.", color = Ink.TextMuted) },
-            confirmButton = {
-                TextButton(onClick = { vm.clearHistory(); confirmClear = false }) { Text("Clear", color = Ink.Alert) }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text("Cancel", color = Ink.Text) }
-            },
-        )
     }
 }
 

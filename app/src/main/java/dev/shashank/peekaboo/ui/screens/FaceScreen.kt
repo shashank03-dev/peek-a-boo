@@ -79,6 +79,7 @@ import dev.shashank.peekaboo.ui.Permissions
 import dev.shashank.peekaboo.ui.components.Panel
 import dev.shashank.peekaboo.ui.components.PrimaryButton
 import dev.shashank.peekaboo.ui.components.SecondaryButton
+import dev.shashank.peekaboo.ui.components.HoldButton
 import dev.shashank.peekaboo.ui.components.ListRow
 import dev.shashank.peekaboo.ui.components.ScreenHeader
 import dev.shashank.peekaboo.ui.components.Section
@@ -197,7 +198,6 @@ internal fun FaceOverview(
     onRemove: () -> Unit,
     celebrate: Boolean = false,
 ) {
-    var confirmRemove by remember { mutableStateOf(false) }
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     Box(Modifier.fillMaxSize()) {
     Column(
@@ -233,9 +233,10 @@ internal fun FaceOverview(
             }
             Section {
                 ListRow("Test recognition", subtitle = "Check it knows you from a friend", icon = Icons.Rounded.Science, onClick = onTest)
-                ListRow("Scan again", subtitle = "New glasses, haircut or lighting", icon = Icons.Rounded.Refresh, onClick = onEnroll)
-                ListRow("Remove my face", icon = Icons.Rounded.DeleteOutline, iconTint = Ink.Alert, titleColor = Ink.Alert, showDivider = false, chevron = false, onClick = { confirmRemove = true })
+                ListRow("Scan again", subtitle = "New glasses, haircut or lighting", icon = Icons.Rounded.Refresh, showDivider = false, onClick = onEnroll)
             }
+            Spacer(Modifier.height(8.dp))
+            HoldButton("Hold to remove my face", "Face removed", icon = Icons.Rounded.DeleteOutline, onHold = onRemove)
         }
         Spacer(Modifier.height(16.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
@@ -251,20 +252,9 @@ internal fun FaceOverview(
                 .align(Alignment.BottomCenter)
                 .padding(start = 20.dp, end = 20.dp, bottom = TabBarHeight + navBottom + 32.dp),
         ) {
-            PrimaryButton("Scan my face", icon = Icons.Rounded.Fingerprint, onClick = onEnroll)
+            PrimaryButton("Scan my face", icon = Icons.Rounded.Fingerprint, spark = true, onClick = onEnroll)
         }
     }
-    }
-
-    if (confirmRemove) {
-        AlertDialog(
-            onDismissRequest = { confirmRemove = false },
-            containerColor = Ink.Raised,
-            title = { Text("Remove your face?", color = Ink.Text) },
-            text = { Text("You'll be counted as a peeker whenever someone else is looking too, until you scan again.", color = Ink.TextMuted) },
-            confirmButton = { TextButton(onClick = { onRemove(); confirmRemove = false }) { Text("Remove", color = Ink.Alert) } },
-            dismissButton = { TextButton(onClick = { confirmRemove = false }) { Text("Keep", color = Ink.Text) } },
-        )
     }
 }
 

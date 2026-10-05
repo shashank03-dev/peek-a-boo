@@ -26,6 +26,11 @@ actions). Flat surfaces with hairline borders, no gradients or glows. The hero i
 that glances around while guarding, dozes on standby, sleeps when off and stares wide open during
 a peek.
 
+Motion is spring-based throughout, with native Compose ports of a few [React Bits](https://reactbits.dev)
+components: rolling digit counters, hold-to-confirm buttons, a squish switch, a rubber-band
+segmented control, swipe-to-delete rows with an undo toast, a springy setup checklist, an elastic
+slider and a sliding pill tab bar.
+
 ## Features
 
 - **Live peek detection** — front camera + ML Kit face detection, ~5 fps when people are around, ~2 fps when the room is empty.
