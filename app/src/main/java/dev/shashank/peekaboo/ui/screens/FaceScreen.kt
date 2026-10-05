@@ -138,7 +138,7 @@ fun FaceScreen(vm: MainViewModel, contentPadding: PaddingValues) {
     }
 }
 
-/** Face glyph on a disc inside a tick ring: lime ticks and a check once enrolled, a scan line before. */
+/** Face glyph on a disc inside a tick ring: accent ticks and a check once enrolled, a scan line before. */
 @Composable
 internal fun FaceBadge(enrolled: Boolean, size: Dp, celebrate: Boolean = false) {
     val t = rememberInfiniteTransition(label = "scan")

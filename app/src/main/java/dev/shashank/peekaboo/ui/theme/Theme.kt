@@ -15,33 +15,34 @@ import androidx.compose.ui.unit.sp
 import dev.shashank.peekaboo.R
 
 /**
- * Palette: one warm graphite neutral ramp and exactly two signal colours.
+ * Palette: one cool graphite neutral ramp and two soft signal colours.
  *
- *  - [Accent] (lime) means "on / you / go": the running guard, your face, primary actions, switches.
- *  - [Alert] (red) means "someone is looking": peeks, peek counts, destructive actions.
+ *  - [Accent] (periwinkle) means "on / you / go": the running guard, your face, primary actions,
+ *    switches.
+ *  - [Alert] (dusty coral) means "someone is looking": peeks, peek counts, destructive actions.
  *
- * Everything else is neutral. No gradients, no glows: hierarchy comes from the surface steps
- * (Bg → Surface → Raised) and the three text tones.
+ * Both are deliberately desaturated so the screen stays calm; everything else is neutral, and
+ * hierarchy comes from the surface steps (Bg → Surface → Raised) and the three text tones.
  */
 object Ink {
-    val Bg = Color(0xFF0E0E0C)
-    val Surface = Color(0xFF171715)
-    val Raised = Color(0xFF22221F)
-    val Sunken = Color(0xFF2C2C28)
-    val Line = Color(0xFF282825)
-    val LineStrong = Color(0xFF3A3A35)
+    val Bg = Color(0xFF0F0F12)
+    val Surface = Color(0xFF18181C)
+    val Raised = Color(0xFF222228)
+    val Sunken = Color(0xFF2C2C33)
+    val Line = Color(0xFF26262C)
+    val LineStrong = Color(0xFF383840)
 
-    val Text = Color(0xFFF2F0EA)
-    val TextMuted = Color(0xFFA3A099)
-    val TextFaint = Color(0xFF6E6C66)
+    val Text = Color(0xFFF1F0F5)
+    val TextMuted = Color(0xFFA4A3AE)
+    val TextFaint = Color(0xFF706F7A)
 
-    val Accent = Color(0xFFD4F25A)
-    val OnAccent = Color(0xFF151A04)
-    val AccentSoft = Color(0x1FD4F25A)
+    val Accent = Color(0xFFAEB6FF)
+    val OnAccent = Color(0xFF161936)
+    val AccentSoft = Color(0x24AEB6FF)
 
-    val Alert = Color(0xFFFF5640)
-    val OnAlert = Color(0xFF1F0603)
-    val AlertSoft = Color(0x24FF5640)
+    val Alert = Color(0xFFEE8C7C)
+    val OnAlert = Color(0xFF2A0C07)
+    val AlertSoft = Color(0x24EE8C7C)
 }
 
 /** The single colour that represents the guard's state on the eye, status chip and live dot. */

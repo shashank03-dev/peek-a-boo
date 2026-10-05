@@ -20,8 +20,8 @@ Open the link on your phone → install (allow "install unknown apps" for your b
 
 ## Design
 
-Warm graphite neutrals and exactly two signal colours: lime means "on / you / go" (the running
-guard, your face, primary actions) and red means "someone is looking" (peeks, counts, destructive
+Cool graphite neutrals and two soft signal colours: periwinkle means "on / you / go" (the running
+guard, your face, primary actions) and dusty coral means "someone is looking" (peeks, counts, destructive
 actions). Flat surfaces with hairline borders, no gradients or glows. The hero is a graphic eye
 that glances around while guarding, dozes on standby, sleeps when off and stares wide open during
 a peek.
