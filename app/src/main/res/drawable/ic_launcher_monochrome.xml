@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- themed-icon silhouette: eyes (pupils cut out) over a phone outline -->
+    <group>
+        <clip-path android:pathData="M0,0 H108 V64 H0 Z" />
+        <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+            android:pathData="M32,58 A10,12.5 0 1,0 52,58 A10,12.5 0 1,0 32,58 Z M38.9,60 A5.6,5.6 0 1,0 50.1,60 A5.6,5.6 0 1,0 38.9,60 Z
+                M56,58 A10,12.5 0 1,0 76,58 A10,12.5 0 1,0 56,58 Z M62.9,60 A5.6,5.6 0 1,0 74.1,60 A5.6,5.6 0 1,0 62.9,60 Z" />
+    </group>
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M22,76 Q22,64 34,64 H74 Q86,64 86,76 V108 H22 Z M25.5,76 Q25.5,67.5 34,67.5 H74 Q82.5,67.5 82.5,76 V108 H25.5 Z
+            M46.5,71 H61.5 A3.5,3.5 0 0,1 61.5,78 H46.5 A3.5,3.5 0 0,1 46.5,71 Z" />
+</vector>

@@ -1,14 +1,39 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp" android:height="108dp"
     android:viewportWidth="108" android:viewportHeight="108">
-    <group android:translateX="54" android:translateY="54">
-        <!-- eye -->
-        <path android:fillColor="#FFF1F0F5"
-            android:pathData="M-22,0 C-12,-15 12,-15 22,0 C12,15 -12,15 -22,0 Z" />
-        <!-- iris -->
-        <path android:fillColor="#FFAEB6FF" android:pathData="M0,-9 A9,9 0 1,1 -0.01,-9 Z" />
-        <!-- pupil -->
-        <path android:fillColor="#FF0F0F12" android:pathData="M0,-4 A4,4 0 1,1 -0.01,-4 Z" />
-        <path android:fillColor="#FFF1F0F5" android:pathData="M3,-5.2 A1.4,1.4 0 1,1 2.99,-5.2 Z" />
-    </group>
+    <!-- eyes peeking over the phone -->
+    <path android:fillColor="#FFF4F3FA"
+        android:pathData="M32,58 A10,12.5 0 1,0 52,58 A10,12.5 0 1,0 32,58 Z" />
+    <path android:fillColor="#FFF4F3FA"
+        android:pathData="M56,58 A10,12.5 0 1,0 76,58 A10,12.5 0 1,0 56,58 Z" />
+    <path android:fillColor="#FF121326"
+        android:pathData="M38.9,60 A5.6,5.6 0 1,0 50.1,60 A5.6,5.6 0 1,0 38.9,60 Z" />
+    <path android:fillColor="#FF121326"
+        android:pathData="M62.9,60 A5.6,5.6 0 1,0 74.1,60 A5.6,5.6 0 1,0 62.9,60 Z" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M44.6,58 A1.8,1.8 0 1,0 48.2,58 A1.8,1.8 0 1,0 44.6,58 Z" />
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M68.6,58 A1.8,1.8 0 1,0 72.2,58 A1.8,1.8 0 1,0 68.6,58 Z" />
+    <!-- phone frame -->
+    <path android:pathData="M22,76 Q22,64 34,64 H74 Q86,64 86,76 V108 H22 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="0" android:startY="62" android:endX="0" android:endY="108"
+                android:startColor="#FFC3C9FF" android:endColor="#FF7C86F0" />
+        </aapt:attr>
+    </path>
+    <!-- screen -->
+    <path android:pathData="M25.5,76 Q25.5,67.5 34,67.5 H74 Q82.5,67.5 82.5,76 V108 H25.5 Z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="linear"
+                android:startX="0" android:startY="67" android:endX="0" android:endY="108"
+                android:startColor="#FF2A2E62" android:endColor="#FF15162C" />
+        </aapt:attr>
+    </path>
+    <!-- island notch with the "peeping" dot -->
+    <path android:fillColor="#FF000000"
+        android:pathData="M46.5,71 H61.5 A3.5,3.5 0 0,1 61.5,78 H46.5 A3.5,3.5 0 0,1 46.5,71 Z" />
+    <path android:fillColor="#FFEE8C7C"
+        android:pathData="M58.6,74.5 A1.9,1.9 0 1,0 62.4,74.5 A1.9,1.9 0 1,0 58.6,74.5 Z" />
 </vector>

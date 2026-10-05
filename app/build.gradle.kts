@@ -20,8 +20,8 @@ android {
         applicationId = "dev.shashank.peekaboo"
         minSdk = 26
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.4.0"
+        versionCode = 1
+        versionName = "1.0.0"
 
         ndk {
             // Phones are ARM; dropping emulator ABIs halves the APK.
